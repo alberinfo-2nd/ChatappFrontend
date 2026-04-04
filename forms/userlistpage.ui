@@ -13,6 +13,19 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>150</y>
+     <width>49</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Welcome to ChatApp!!!!</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

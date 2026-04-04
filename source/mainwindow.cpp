@@ -22,6 +22,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     // set Login Page as the default page to display
     ui->stackedWidget->setCurrentWidget(loginPage);
+
+    // connects signal from login page (loginSuccesful) to slot function (showUserListPage) which changes the current displayed
+    // stacked widget to User List Page
+    connect(loginPage, &LoginPage::loginSuccessful, this, &MainWindow::showUserListPage);
 }
 
 // MainWindow destructor
@@ -30,17 +34,17 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-// MainWindow member function to show Login Page
+// MainWindow slot function to show Login Page
 void MainWindow::showLoginPage() {
     ui->stackedWidget->setCurrentWidget(loginPage);
 }
 
-// MainWindow member function to show User List Page
+// MainWindow slot function to show User List Page
 void MainWindow::showUserListPage() {
     ui->stackedWidget->setCurrentWidget(userListPage);
 }
 
-// MainWindow member function to show Chat Page
+// MainWindow function to show Chat Page
 void MainWindow::showChatPage() {
     ui->stackedWidget->setCurrentWidget(chatPage);
 }
