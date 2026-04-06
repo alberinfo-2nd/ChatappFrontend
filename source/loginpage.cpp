@@ -16,14 +16,80 @@ LoginPage::LoginPage(QWidget *parent)
     // connects login buttin to slot for handling logins
     connect(ui->loginButton, &QPushButton::clicked, this, &LoginPage::handleLogin);
 
+    // set place holder for username line edit
+    ui->usernameLineEdit->setPlaceholderText("Username");
+
+    // set place holder and mode for password line edit
+    ui->passwordLineEdit->setPlaceholderText("Password");
+    ui->passwordLineEdit->setEchoMode(QLineEdit::Password);
+
+    // make link styled admin button hand cursor on hover
+    ui->adminButton->setCursor(Qt::PointingHandCursor);
+
+    // set background stlying attribute for login page;
+    this->setAttribute(Qt::WA_StyledBackground, true);
+
+
     // style sheet for LoginPage
     this->setStyleSheet(R"(
 
+        #LoginPage {
+            background-color: #54566a;
+        }
+
         QWidget#loginCard {
-            border: 2px solid black;
-            background-color: #8ecae6;
-            padding: 10px 12px;
+            background-color: white;
+            padding: 20px 16px;
             border-radius: 14px;
+            border: 1px solid rgba(0, 0, 0, 100);
+        }
+
+        #loginTitle {
+            font-size: 30pt;
+            font-weight: bold;
+            margin-bottom: 18px;
+            color: black;
+        }
+
+        #pageTitle {
+            font-size: 36pt;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .QPushButton, .QLineEdit {
+            font-size: 16pt;
+            color: black;
+        }
+
+        #loginButton:hover {
+            background-color: #aed683;
+        }
+
+        #loginButton {
+            background-color: #bacba8;
+            padding: 6px 10px;
+            color: white;
+        }
+
+        .QLineEdit {
+            border: 1px solid rgba(0, 0, 0, 100);
+            border-radius: 6px;
+            background-color: white;
+            padding: 6px 10px;
+        }
+
+        #adminButton {
+            color: #bacba8;
+            background: transparent;
+            border: none;
+            padding 0;
+            margin: 0;
+            text-decoration: underline;
+        }
+
+        #adminButton:hover {
+            color: #aed683;
         }
     )");
 }
@@ -40,11 +106,9 @@ void LoginPage::updateLoginView() {
 
     if (isAdmin) {
         ui->adminButton->setText("Back to user login");
-        ui->passwordLabel->show();
         ui->passwordLineEdit->show();
     } else {
         ui->adminButton->setText("Admin login");
-        ui->passwordLabel->hide();
         ui->passwordLineEdit->clear();
         ui->passwordLineEdit->hide();
     }
