@@ -14,8 +14,14 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_4">
+   <property name="spacing">
+    <number>0</number>
+   </property>
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
      <item>
       <spacer name="verticalSpacer">
        <property name="orientation">
@@ -31,6 +37,9 @@
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <item alignment="Qt::AlignmentFlag::AlignHCenter">
         <widget class="QLabel" name="pageTitle">
          <property name="text">
@@ -58,7 +67,7 @@
             <property name="spacing">
              <number>22</number>
             </property>
-            <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
+            <item alignment="Qt::AlignmentFlag::AlignHCenter">
              <widget class="QLabel" name="loginTitle">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -71,8 +80,18 @@
               </property>
              </widget>
             </item>
+            <item alignment="Qt::AlignmentFlag::AlignHCenter">
+             <widget class="QLabel" name="descriptiveLabel">
+              <property name="text">
+               <string>create a username</string>
+              </property>
+             </widget>
+            </item>
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_10">
+              <property name="spacing">
+               <number>22</number>
+              </property>
               <item>
                <widget class="QLineEdit" name="usernameLineEdit"/>
               </item>

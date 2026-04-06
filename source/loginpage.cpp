@@ -45,16 +45,21 @@ LoginPage::LoginPage(QWidget *parent)
         }
 
         #loginTitle {
-            font-size: 30pt;
+            font-size: 28pt;
             font-weight: bold;
-            margin-bottom: 18px;
             color: black;
         }
 
+        #descriptiveLabel {
+            font-size: 14pt;
+            color: rgba(0, 0, 0, 100);
+        }
+
         #pageTitle {
-            font-size: 36pt;
+            font-size: 38pt;
             font-weight: bold;
-            margin-bottom: 30px;
+            margin-bottom: 80px;
+            color: #bacba8;
         }
 
         .QPushButton, .QLineEdit {
@@ -63,11 +68,11 @@ LoginPage::LoginPage(QWidget *parent)
         }
 
         #loginButton:hover {
-            background-color: #aed683;
+            background-color: #bacba8;
         }
 
         #loginButton {
-            background-color: #bacba8;
+            background-color: #aed683;
             padding: 6px 10px;
             color: white;
         }
@@ -80,7 +85,7 @@ LoginPage::LoginPage(QWidget *parent)
         }
 
         #adminButton {
-            color: #bacba8;
+            color: #aed683;
             background: transparent;
             border: none;
             padding 0;
@@ -89,7 +94,7 @@ LoginPage::LoginPage(QWidget *parent)
         }
 
         #adminButton:hover {
-            color: #aed683;
+            color: #bacba8;
         }
     )");
 }
@@ -106,9 +111,11 @@ void LoginPage::updateLoginView() {
 
     if (isAdmin) {
         ui->adminButton->setText("Back to user login");
+        ui->descriptiveLabel->setText("Enter username and password");
         ui->passwordLineEdit->show();
     } else {
         ui->adminButton->setText("Admin login");
+        ui->descriptiveLabel->setText("Create a username");
         ui->passwordLineEdit->clear();
         ui->passwordLineEdit->hide();
     }
