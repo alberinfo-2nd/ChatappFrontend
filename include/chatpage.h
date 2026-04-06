@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+class QVBoxLayout;
+
 namespace Ui {
 class ChatPage;
 }
@@ -15,8 +17,13 @@ public:
     explicit ChatPage(QWidget *parent = nullptr);
     ~ChatPage();
 
+    void displayReceivedMessage(const QString &message);
+    void displaySentMessage(const QString &message);
+
 private:
     Ui::ChatPage *ui;
+    QVBoxLayout* chatScrollAreaLayout;
+
 };
 
 #endif // CHATPAGE_H
