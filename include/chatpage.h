@@ -4,6 +4,7 @@
 #include <QWidget>
 
 class QVBoxLayout;
+class QLabel;
 
 namespace Ui {
 class ChatPage;
@@ -19,10 +20,17 @@ public:
 
     void displayReceivedMessage(const QString &message);
     void displaySentMessage(const QString &message);
+    void displayCurrentUsers();
+
+private slots:
+    void sendMessage();
 
 private:
     Ui::ChatPage *ui;
     QVBoxLayout* chatScrollAreaLayout;
+    QVBoxLayout* userListScrollAreaLayout;
+
+    QLabel* createNewMessageLabel(const QString &message);
 
 };
 
