@@ -1,6 +1,7 @@
 #include "loginpage.h"
 #include "ui_loginpage.h"
 #include <QMessageBox>
+#include <Requests.h>
 
 LoginPage::LoginPage(QWidget *parent)
     : QWidget(parent)
@@ -144,11 +145,11 @@ void LoginPage::handleLogin() {
         QMessageBox::warning(this, "Login", "Username can't contain spaces");
         return;
     }
-    if (m_mode == LoginMode::Admin) {
+    const QString password{ui->passwordLineEdit->text().trimmed()};
 
-    } else {
-        emit loginSuccessful();
-    }
-
+    std::string authorizationToken = sendLogin(username.toStdString(), "", password.toStdString());
+    const QString message = QString::fromUtf8(authorizationToken.data(), int(authorizationToken.size()));
+    QMessageBox::warning(this, "Joemama", message);
+    // emit loginSuccessful();
 }
 
