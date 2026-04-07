@@ -17,6 +17,8 @@ ChatPage::ChatPage(QWidget *parent)
 
     connect(ui->sendMessageButton, &QPushButton::clicked, this, &ChatPage::sendMessage);
 
+    ui->messageLineEdit->setPlaceholderText("Send message...");
+
     displayReceivedMessage("Hello");
     displayReceivedMessage("How are you doing");
     displayReceivedMessage("How are you doing");
@@ -47,6 +49,14 @@ ChatPage::ChatPage(QWidget *parent)
             color: red;
             font-size: 18pt;
         }
+
+        #chatScrollArea {
+            background-color: white;
+        }
+
+        #chatScrollAreaContent {
+            background-color: white;
+        }
     )");
 }
 
@@ -68,7 +78,7 @@ void ChatPage::displayReceivedMessage(const QString &message) {
     chatScrollAreaLayout->addWidget(messageLabel);
 
 
-    messageLabel->setStyleSheet("background-color: black;");
+    messageLabel->setStyleSheet("background-color: blue;");
 }
 
 void ChatPage::displaySentMessage(const QString &message) {
@@ -76,7 +86,7 @@ void ChatPage::displaySentMessage(const QString &message) {
     chatScrollAreaLayout->addWidget(messageLabel);
     chatScrollAreaLayout->setAlignment(messageLabel, Qt::AlignRight);
 
-    messageLabel->setStyleSheet("background-color: white;");
+    messageLabel->setStyleSheet("background-color: green;");
 }
 
 void ChatPage::sendMessage() {
