@@ -150,6 +150,6 @@ void LoginPage::handleLogin() {
     std::string authorizationToken = sendLogin(username.toStdString(), "", password.toStdString());
     const QString message = QString::fromUtf8(authorizationToken.data(), int(authorizationToken.size()));
     QMessageBox::warning(this, "Joemama", message);
-    // emit loginSuccessful();
+    emit loginSuccessful();
 }
 
