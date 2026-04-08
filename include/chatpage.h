@@ -8,6 +8,7 @@
 
 class QVBoxLayout;
 class QLabel;
+class User;
 
 namespace Ui {
 class ChatPage;
@@ -18,24 +19,27 @@ class ChatPage : public QWidget
     Q_OBJECT
 
 public:
-    explicit ChatPage(QWidget *parent = nullptr);
+    // constructor
+    ChatPage(QWidget *parent = nullptr, User* currentUser = nullptr);
     ~ChatPage();
 
 
 
 private slots:
+    // slot functions
     void sendMessage();
     void clearDisplayedMessages();
 
 private:
+    // member attriubutes
     Ui::ChatPage *ui;
     QVBoxLayout* chatScrollAreaLayout;
     QVBoxLayout* userListScrollAreaLayout;
-
-    QLabel* createNewMessageLabel(const QString &message);
-
     QHash<QString, QLabel*> activeUserLabels;
+    User* m_currentUser;
 
+    //helper functions
+    QLabel* createNewMessageLabel(const QString &message);
     void displayReceivedMessage(const QString &message);
     void displaySentMessage(const QString &message);
     void displayActiveUsers(const std::vector<std::string> &users);

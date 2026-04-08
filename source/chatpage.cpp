@@ -4,12 +4,14 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-
-ChatPage::ChatPage(QWidget *parent)
+// constructor
+ChatPage::ChatPage(QWidget *parent, User* currentUser)
     : QWidget(parent)
     , ui(new Ui::ChatPage)
     , chatScrollAreaLayout(new QVBoxLayout())
     , userListScrollAreaLayout(new QVBoxLayout())
+    , m_currentUser{currentUser}
+// constructor body
 {
     ui->setupUi(this);
 
@@ -17,38 +19,13 @@ ChatPage::ChatPage(QWidget *parent)
     ui->chatScrollAreaContent->setLayout(chatScrollAreaLayout);
     ui->userListScrollAreaContent->setLayout(userListScrollAreaLayout);
 
+    // connect send message button to slot function send message
     connect(ui->sendMessageButton, &QPushButton::clicked, this, &ChatPage::sendMessage);
 
+    // set place holder text for line edit in chat footer
     ui->messageLineEdit->setPlaceholderText("Send message...");
 
-    displayReceivedMessage("Hello");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displaySentMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displaySentMessage("How are you doing");
-    displaySentMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-    displayReceivedMessage("How are you doing");
-
-    std::vector<std::string> testUsers{"Kolby", "Halie", "John"};
-    displayActiveUsers(testUsers);
-
-
+    // style sheet for chat page
     this->setStyleSheet(R"(
         #chatScrollAreaContent QLabel {
             color: red;
@@ -70,11 +47,13 @@ ChatPage::ChatPage(QWidget *parent)
     )");
 }
 
+// destructor
 ChatPage::~ChatPage()
 {
     delete ui;
 }
 
+// creates a new label for a message
 QLabel* ChatPage::createNewMessageLabel(const QString &message) {
     QLabel* messageLabel = new QLabel(message, ui->chatScrollArea);
     messageLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -82,6 +61,7 @@ QLabel* ChatPage::createNewMessageLabel(const QString &message) {
 
 }
 
+// displays recieved message (different color, align left)
 void ChatPage::displayReceivedMessage(const QString &message) {
     QLabel* messageLabel = createNewMessageLabel(message);
     chatScrollAreaLayout->setAlignment(messageLabel, Qt::AlignLeft);
@@ -91,6 +71,7 @@ void ChatPage::displayReceivedMessage(const QString &message) {
     messageLabel->setStyleSheet("background-color: blue;");
 }
 
+// dsiplays sent message (different color, align right)
 void ChatPage::displaySentMessage(const QString &message) {
     QLabel* messageLabel = createNewMessageLabel(message);
     chatScrollAreaLayout->addWidget(messageLabel);
@@ -99,6 +80,7 @@ void ChatPage::displaySentMessage(const QString &message) {
     messageLabel->setStyleSheet("background-color: green;");
 }
 
+// slot function for sending message
 void ChatPage::sendMessage() {
     const QString message = ui->messageLineEdit->text();
     ui->messageLineEdit->clear();
@@ -107,6 +89,7 @@ void ChatPage::sendMessage() {
     }
 }
 
+// used to display a label for each active user
 void ChatPage::displayActiveUsers(const std::vector<std::string> &users) {
     for (const auto& user : users) {
         QString username = QString::fromStdString(user);
@@ -121,6 +104,7 @@ void ChatPage::displayActiveUsers(const std::vector<std::string> &users) {
     }
 }
 
+// used to delete label assiociated to an active user
 void ChatPage::removeActiveUser(const QString &username) {
     auto iterator = activeUserLabels.find(username);
     if (iterator == activeUserLabels.end()) {
@@ -134,6 +118,7 @@ void ChatPage::removeActiveUser(const QString &username) {
     alternateLabelStyle();
 }
 
+// clear chat box
 void ChatPage::clearDisplayedMessages() {
     QLayoutItem* item;
     while ((item = chatScrollAreaLayout->takeAt(0)) != nullptr) {
@@ -143,6 +128,7 @@ void ChatPage::clearDisplayedMessages() {
 
 }
 
+// stylinig for ative user labels (every other labels gets different color)
 void ChatPage::alternateLabelStyle() {
     for (int i{0}; i < userListScrollAreaLayout->count(); ++i) {
         QLayoutItem* item = userListScrollAreaLayout->itemAt(i);

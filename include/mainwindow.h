@@ -1,12 +1,14 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#pragma once
 #include <QMainWindow>
 
 // Foward declaration of classes used
 class LoginPage;
 class UserListPage;
 class ChatPage;
+class User;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -33,10 +35,13 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
+
     // Delcaration of pointers for each QWidget
     LoginPage *loginPage;
     UserListPage *userListPage;
     ChatPage *chatPage;
+
+    User* currentUser;
 };
 
 #endif // MAINWINDOW_H
