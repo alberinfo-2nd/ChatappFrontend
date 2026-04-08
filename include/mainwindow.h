@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#pragma once
+#include "userlistpage.h"
 #include <QMainWindow>
 
 // Foward declaration of classes used
@@ -9,6 +9,7 @@ class LoginPage;
 class UserListPage;
 class ChatPage;
 class User;
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -33,15 +34,15 @@ private slots:
 
 // Declaring Member attributes
 private:
+    QString storedUsername; // temporary store for testing
     Ui::MainWindow *ui;
 
 
     // Delcaration of pointers for each QWidget
     LoginPage *loginPage;
-    UserListPage *userListPage;
+    UserListPage *userListPage = new UserListPage(this);
     ChatPage *chatPage;
 
     User* currentUser;
 };
-
 #endif // MAINWINDOW_H

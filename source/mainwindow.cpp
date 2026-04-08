@@ -26,6 +26,24 @@ MainWindow::MainWindow(QWidget *parent)
     // connects signal from login page (loginSuccesful) to slot function (showUserListPage) which changes the current displayed
     // stacked widget to User List Page
     connect(loginPage, &LoginPage::loginSuccessful, this, &MainWindow::showUserListPage);
+
+    // Function to connect UserListPage to LogInPage ?
+    connect(userListPage, &UserListPage::userClicked, this, [this](const QString &username){
+        // Disble Button if user is busy
+        if(userListPage->getWidget(username)){
+            userListPage->getWidget(username)->setEnabled(false);
+        }
+
+        ui->stackedWidget->setCurrentIndex(1);
+        qDebug() << "User selected:" << username;
+    });
+
+    // Function to connect Exit Button to LogIn - NEEDS WORK
+    connect(userListPage, &UserListPage::userLogOut, this, [this](){
+      //  this->currentUser ;
+        ui->stackedWidget->setCurrentIndex(0);
+        qDebug()<<"User has logged out. Session CLeared";
+    });
 }
 
 // MainWindow destructor
