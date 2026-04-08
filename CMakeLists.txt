@@ -29,6 +29,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         include/chatpage.h source/chatpage.cpp forms/chatpage.ui
         include/Requests.h
         source/Requests.cpp
+        include/user.h
+        source/user.cpp
+
+
 
     )
 # Define target properties for Android with Qt 6 as:
