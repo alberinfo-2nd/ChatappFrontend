@@ -48,7 +48,9 @@ UserListPage::UserListPage(QWidget *parent)
         padding: 5px 20px;
         min-width: 20px;
     }
-
+    #pushButton::hover{
+        background-color: #d9d9d9;
+    }
 )");
 
     // TEST
@@ -72,24 +74,41 @@ void UserListPage::displayActiveUsers(const std::vector<std::string> &users) {
 
 // Funtion to Add User
 void UserListPage::addUserToList(const QString &username){
-    QLabel* newLabel = new QLabel(username);
-    ui->verticalLayout_3->insertWidget(0, newLabel);
-    activeUserLabels.insert(username, newLabel);
+    QPushButton* userBtn = new QPushButton(username);
+    userBtn->setStyleSheet(R"(
+    QPushButton{
+    background-color: white;
+    }
+    QPushButton::hover{
+    background-color: #d9d9d9;
+    }
+)");
+    // Button to click user
+    connect(userBtn, &QPushButton::clicked, this, [this, username]() {
+        emit userClicked(username);
+    });
+    ui-> verticalLayout_3->insertWidget(0, userBtn);
+    activeUserLabels.insert(username, userBtn);
+
+    // Old Code: did not have signal
+    // QLabel* newLabel = new QLabel(username);
+    // ui->verticalLayout_3->insertWidget(0, newLabel);
+    // activeUserLabels.insert(username, newLabel);
 }
 
-// Funtion to Remove Users
+// Funtion to Remove Users (copied from chat branch)
 void UserListPage::removeActiveUser(const QString &username) {
     auto iterator = activeUserLabels.find(username);
     if (iterator == activeUserLabels.end()) {
         return;
     }
 
-    QLabel* userLabel = iterator.value();
-    userLabel->deleteLater();
+    QWidget* userWidget = iterator.value();
+    userWidget->deleteLater();
     activeUserLabels.erase(iterator);
 }
 
-// Exit Button
+// Function for Exit Button
 void UserListPage::on_pushButton_clicked() {
     this->close();
 }
