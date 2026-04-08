@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->stackedWidget->addWidget(userListPage);
 
     // set Login Page as the default page to display
-    ui->stackedWidget->setCurrentWidget(loginPage);
+    ui->stackedWidget->setCurrentWidget(userListPage); //did userListPage for testing
 }
 
 // MainWindow destructor
