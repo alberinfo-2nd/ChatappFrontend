@@ -3,10 +3,15 @@
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <SessionManager.h>
+#include <ActiveUsersManager.h>
 
-UserListPage::UserListPage(QWidget *parent)
+UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersManager *activeUsersManager)
     : QWidget(parent)
     , ui(new Ui::UserListPage)
+    , m_sessionManager{sessionManager}
+    , m_activeUsersManager{activeUsersManager}
+
 {
     ui->setupUi(this);
     this->setAttribute(Qt::WA_StyledBackground, true); // fixes background problem
@@ -52,11 +57,9 @@ UserListPage::UserListPage(QWidget *parent)
         background-color: #d9d9d9;
     }
 )");
+    // connect signal from active users manager to display active users everytime the list is updated
+    connect(activeUsersManager, &ActiveUsersManager::activeUsersUpdated, this, &UserListPage::displayActiveUsers);
 
-    // TEST
-    // std::vector<std::string> users = requestActiveUsers(); - for when request file added
-    std::vector<std::string> testUsers = {"Kolby", "Keila", "Albert", "James"};
-    displayActiveUsers(testUsers);
 }
 
 UserListPage::~UserListPage()
@@ -65,27 +68,44 @@ UserListPage::~UserListPage()
 }
 
 // Function to Display List
-void UserListPage::displayActiveUsers(const std::vector<std::string> &users) {
-    for(const auto& user : users){
-        QString username = QString::fromStdString(user);
-        addUserToList(username);
+// Updated to allow auto updates of active user list
+void UserListPage::displayActiveUsers() {
+    QSet<QString> currentUsers;
+    for(const auto& user : m_activeUsersManager->getActiveUsers()){
+        QString username = user.username;
+        QString public_key = user.public_key;
+
+        if (username == m_sessionManager->getUsername()) {
+            continue;
+        }
+
+        currentUsers.insert(username);
+
+        if(!(activeUserLabels.contains(username))) {
+            addUserToList(username, public_key);
+        }
+    }
+    for (auto iterator = activeUserLabels.begin(); iterator != activeUserLabels.end(); ++iterator) {
+        if(!currentUsers.contains(iterator.key())) {
+            removeActiveUser(iterator.key());
+        }
     }
 }
 
 // Funtion to Add User
-void UserListPage::addUserToList(const QString &username){
-    QPushButton* userBtn = new QPushButton(username);
+void UserListPage::addUserToList(const QString &username, const QString &public_key){
+    QPushButton* userBtn = new QPushButton(username, this);
     userBtn->setStyleSheet(R"(
-    QPushButton{
-    background-color: white;
-    }
-    QPushButton::hover{
-    background-color: #d9d9d9;
-    }
-)");
+        QPushButton {
+            background-color: white;
+        }
+        QPushButton::hover {
+            background-color: #d9d9d9;
+        }
+    )");
     // Button to click user
-    connect(userBtn, &QPushButton::clicked, this, [this, username]() {
-        emit userClicked(username);
+    connect(userBtn, &QPushButton::clicked, this, [this, username, public_key]() {
+        emit chatRequested(username, public_key);
     });
     ui-> verticalLayout_3->insertWidget(0, userBtn);
     activeUserLabels.insert(username, userBtn);

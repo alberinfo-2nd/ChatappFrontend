@@ -27,10 +27,15 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         include/loginpage.h source/loginpage.cpp forms/loginpage.ui
         include/userlistpage.h source/userlistpage.cpp forms/userlistpage.ui
         include/chatpage.h source/chatpage.cpp forms/chatpage.ui
-        include/Requests.h
-        source/Requests.cpp
+        include/BackendClient.h
+        source/backendclient.cpp
         include/user.h
-        source/user.cpp
+
+        source/ActiveUsersManager.cpp
+        include/ActiveUsersManager.h
+        include/SessionManager.h
+        source/SessionManager.cpp
+        include/ActiveUser.h
 
 
 

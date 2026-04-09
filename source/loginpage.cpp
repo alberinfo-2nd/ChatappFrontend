@@ -1,11 +1,12 @@
 #include "loginpage.h"
 #include "ui_loginpage.h"
 #include <QMessageBox>
-#include <Requests.h>
+#include <BackendClient.h>
 
-LoginPage::LoginPage(QWidget *parent)
+LoginPage::LoginPage(QWidget *parent, BackendClient *backendClient)
     : QWidget(parent)
     , ui(new Ui::LoginPage)
+    , m_backendClient{backendClient}
 {
     ui->setupUi(this);
 
@@ -134,6 +135,7 @@ void LoginPage::toggleLoginMode() {
 }
 
 // slot function for handling login requests (emits loginSuccessful signal)
+// TODO update function for handling admin logins
 void LoginPage::handleLogin() {
 
     const QString username{ ui->usernameLineEdit->text().trimmed() };
@@ -146,10 +148,10 @@ void LoginPage::handleLogin() {
         return;
     }
     const QString password{ui->passwordLineEdit->text().trimmed()};
-
-    std::string authorizationToken = sendLogin(username.toStdString(), "", password.toStdString());
+    const QString public_key = "12345";
+    std::string authorizationToken = m_backendClient->sendLogin(username.toStdString(), public_key.toStdString(), password.toStdString());
     const QString message = QString::fromUtf8(authorizationToken.data(), int(authorizationToken.size()));
     QMessageBox::warning(this, "Joemama", message);
-    emit loginSuccessful();
+    emit loginSuccessful(username, public_key, QString::fromStdString(authorizationToken));
 }
 

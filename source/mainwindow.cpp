@@ -3,14 +3,20 @@
 #include "chatpage.h"
 #include "loginpage.h"
 #include "userlistpage.h"
+#include "SessionManager.h"
+#include "ActiveUsersManager.h"
+#include "BackendClient.h"
 
 // Constructor of MainWindow Creates a pointer for each QWidget object(page)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , loginPage(new LoginPage(this))
+    , sessionManager(new SessionManager())
+    , activeUsersManager(new ActiveUsersManager(this))
+    , backendClient(new BackendClient(this, sessionManager))
+    , loginPage(new LoginPage(this, backendClient))
+    , userListPage(new UserListPage(this, sessionManager, activeUsersManager))
     , chatPage(new ChatPage(this))
-    , userListPage(new UserListPage(this))
 
 {
     ui->setupUi(this);
@@ -25,10 +31,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     // connects signal from login page (loginSuccesful) to slot function (showUserListPage) which changes the current displayed
     // stacked widget to User List Page
-    connect(loginPage, &LoginPage::loginSuccessful, this, &MainWindow::showUserListPage);
+    connect(loginPage, &LoginPage::loginSuccessful, this, &MainWindow::handleSuccessfulLogin);
+
+
 
     // Function to connect UserListPage to LogInPage ?
-    connect(userListPage, &UserListPage::userClicked, this, &MainWindow::showChatPage);
+    connect(userListPage, &UserListPage::chatRequested, this, &MainWindow::handleChatRequest);
 
     /*{
         // Disble Button if user is busy
@@ -53,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete sessionManager;
 }
 
 // MainWindow slot function to show Login Page
@@ -68,4 +77,26 @@ void MainWindow::showUserListPage() {
 // MainWindow function to show Chat Page
 void MainWindow::showChatPage() {
     ui->stackedWidget->setCurrentWidget(chatPage);
+}
+
+// used to handle succesful logins
+void MainWindow::handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken) {
+    sessionManager->setCurrentUser(username, public_key, authorizationToken);
+    // testing
+    /*
+    std::cout << "Username: " << sessionManager->getUsername().toStdString() << std::endl <<
+        "Public Key: " << sessionManager->getPublicKey().toStdString() << std::endl <<
+        "Auth Token: " << sessionManager->getAuthorizationToken().toStdString() << std::endl;
+    */
+    ui->stackedWidget->setCurrentWidget(userListPage);
+    backendClient->requestActiveUsers();
+    backendClient->startActiveUserPolling();
+    connect(backendClient, &BackendClient::activeUsersReceived, activeUsersManager, &ActiveUsersManager::setActiveUsers);
+}
+
+//used to handle chat requests
+//TODO no impementation add yet
+void MainWindow::handleChatRequest(const QString &username, const QString &public_key) {
+    ui->stackedWidget->setCurrentWidget(chatPage);
+    backendClient->stopActiveUserPolling();
 }

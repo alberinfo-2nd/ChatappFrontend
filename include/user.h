@@ -1,24 +1,17 @@
 #ifndef USER_H
 #define USER_H
 
-#pragma once
-#include <string>
+#include <QString>
 
-// User class for storing username, authorization token, and public key
-class User {
-private:
-    std::string m_username;
-    std::string m_authorizationToken;
-    std::string m_publicKey;
+/****************************************
+This will later be changed to a class
+until then this works
+*****************************************/
 
-public:
-    //constructor
-    User(std::string username, std::string authorizationToken, std::string publicKey);
-
-    // getter functions
-    std::string getUsername();
-    std::string getAuthorizationToken();
-    std::string getPublicKey();
+struct User {
+    QString username;
+    QString public_key;
+    QString authorizationToken;
 };
 
-#endif // USER_H
+#endif
