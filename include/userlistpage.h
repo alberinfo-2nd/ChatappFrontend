@@ -22,8 +22,12 @@ public:
     // Functions
     void removeActiveUser(const QString &username);
     void addUserToList(const QString &username, const QString &public_key);
-    // Getter for activeUserLabels (in order to disable the button)
-    QWidget* getWidget(QString name) { return activeUserLabels[name]; }
+
+signals:
+    void userClicked(const QString &username);
+    // signal for user exiting app
+    void logoutRequested();
+    void chatRequested(const QString &username, const QString &public_key);
 
 private slots:
    void on_pushButton_clicked(); // Exit button
@@ -35,13 +39,6 @@ private:
     SessionManager *m_sessionManager; // pointer to sessionManager
     ActiveUsersManager *m_activeUsersManager; // pointer to activeUsersManager
 
-
-signals:
-    // signal for user clicking username to chat
-    void userClicked(const QString &username);
-    // signal for user exiting app
-    void userLogOut();
-    void chatRequested(const QString &Username, const QString &public_key);
 };
 
 #endif // USERLISTPAGE_H

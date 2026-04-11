@@ -16,15 +16,15 @@ MainWindow::MainWindow(QWidget *parent)
     , backendClient(new BackendClient(this, sessionManager))
     , loginPage(new LoginPage(this, backendClient))
     , userListPage(new UserListPage(this, sessionManager, activeUsersManager))
-    , chatPage(new ChatPage(this))
+    , chatPage(nullptr)
 
 {
     ui->setupUi(this);
 
     // add each QWidget object(page) to stackedWidget
     ui->stackedWidget->addWidget(loginPage);
-    ui->stackedWidget->addWidget(chatPage);
-    ui->stackedWidget->addWidget(userListPage);
+   // ui->stackedWidget->addWidget(chatPage);
+   // ui->stackedWidget->addWidget(userListPage);
 
     // set Login Page as the default page to display
     ui->stackedWidget->setCurrentWidget(loginPage);
@@ -32,29 +32,6 @@ MainWindow::MainWindow(QWidget *parent)
     // connects signal from login page (loginSuccesful) to slot function (showUserListPage) which changes the current displayed
     // stacked widget to User List Page
     connect(loginPage, &LoginPage::loginSuccessful, this, &MainWindow::handleSuccessfulLogin);
-
-
-
-    // Function to connect UserListPage to LogInPage ?
-    connect(userListPage, &UserListPage::chatRequested, this, &MainWindow::handleChatRequest);
-
-    /*{
-        // Disble Button if user is busy
-
-        if(userListPage->getWidget(username)){
-            userListPage->getWidget(username)->setEnabled(false);
-        }
-
-        ui->stackedWidget->setCurrentIndex(1);
-        qDebug() << "User selected:" << username;
-    });*/
-
-    // Function to connect Exit Button to LogIn - NEEDS WORK
-    connect(userListPage, &UserListPage::userLogOut, this, [this](){
-      //  this->currentUser ;
-        ui->stackedWidget->setCurrentIndex(0);
-        qDebug()<<"User has logged out. Session CLeared";
-    });
 }
 
 // MainWindow destructor
@@ -74,7 +51,7 @@ void MainWindow::showUserListPage() {
     ui->stackedWidget->setCurrentWidget(userListPage);
 }
 
-// MainWindow function to show Chat Page
+//MainWindow function to show Chat Page
 void MainWindow::showChatPage() {
     ui->stackedWidget->setCurrentWidget(chatPage);
 }
@@ -82,21 +59,51 @@ void MainWindow::showChatPage() {
 // used to handle succesful logins
 void MainWindow::handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken) {
     sessionManager->setCurrentUser(username, public_key, authorizationToken);
+    this->m_currentUser.username = username;
+    this->m_currentUser.public_key = public_key;
     // testing
     /*
     std::cout << "Username: " << sessionManager->getUsername().toStdString() << std::endl <<
         "Public Key: " << sessionManager->getPublicKey().toStdString() << std::endl <<
         "Auth Token: " << sessionManager->getAuthorizationToken().toStdString() << std::endl;
     */
+
+    // MOVED STUFF HERE - FIXED EXIT BUTTON
+    ui->stackedWidget->addWidget(userListPage);
     ui->stackedWidget->setCurrentWidget(userListPage);
+    connect(backendClient, &BackendClient::activeUsersReceived, activeUsersManager, &ActiveUsersManager::setActiveUsers);
     backendClient->requestActiveUsers();
     backendClient->startActiveUserPolling();
-    connect(backendClient, &BackendClient::activeUsersReceived, activeUsersManager, &ActiveUsersManager::setActiveUsers);
+    connect(userListPage, &UserListPage::chatRequested, this, &MainWindow::handleChatRequest);
+    connect(userListPage, &UserListPage::logoutRequested, this, [this](){
+        qDebug()<<"User has logged out. Session Cleared";
+
+        ui->stackedWidget->setCurrentIndex(-1);
+        ui->stackedWidget->addWidget(loginPage);
+        showLoginPage();
+        connect(loginPage, &LoginPage::loginSuccessful, this, &MainWindow::handleSuccessfulLogin);
+    });
 }
 
 //used to handle chat requests
 //TODO no impementation add yet
 void MainWindow::handleChatRequest(const QString &username, const QString &public_key) {
+    User partner;
+    partner.username = username;
+    partner.public_key = public_key;
+
+
+    if (!chatPage) {
+        chatPage = new ChatPage(ui->stackedWidget, this->m_currentUser, partner,
+        activeUsersManager->getActiveUsers());
+        ui->stackedWidget->addWidget(chatPage);
+
+        connect(chatPage, &ChatPage::backToUserListRequested,
+                this, &MainWindow::showUserListPage);
+    }
+
+    // update chat instead of recreating it
+    chatPage->switchToNewChat(username);
     ui->stackedWidget->setCurrentWidget(chatPage);
-    backendClient->stopActiveUserPolling();
+
 }

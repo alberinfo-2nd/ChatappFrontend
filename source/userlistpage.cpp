@@ -14,6 +14,10 @@ UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, Acti
 
 {
     ui->setupUi(this);
+    ui->LeftScrollArea->setWidget(ui->LeftScrollWidget);
+    ui->LeftScrollArea->setWidgetResizable(true);
+    ui->LeftScrollWidget->setLayout(ui->verticalLayout_3);
+
     this->setAttribute(Qt::WA_StyledBackground, true); // fixes background problem
 
     this->setStyleSheet(R"(
@@ -27,17 +31,16 @@ UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, Acti
        font-weight: bold;
        border-radius: 15px;
        padding: 8px 20px;
-}
+    }
 
-    #LeftScrollArea, #RightScrollArea,
-    #LeftScrollWidget, #RightScrollWidget {
+    #LeftScrollArea, #LeftScrollWidget {
         background-color: #bacba8;
         border-radius: 20px;
         padding: 10px;
         margin: 4px;
     }
 
-    #LeftScrollWidget QWidget, #RightScrollWidget QWidget {
+    #LeftScrollWidget QPushButton{
         background-color: white;
         color: black;
         border-radius: 10px;
@@ -59,7 +62,6 @@ UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, Acti
 )");
     // connect signal from active users manager to display active users everytime the list is updated
     connect(activeUsersManager, &ActiveUsersManager::activeUsersUpdated, this, &UserListPage::displayActiveUsers);
-
 }
 
 UserListPage::~UserListPage()
@@ -70,6 +72,11 @@ UserListPage::~UserListPage()
 // Function to Display List
 // Updated to allow auto updates of active user list
 void UserListPage::displayActiveUsers() {
+     qDebug() << "Updating UI. Manager says these users are online:" << m_activeUsersManager->getActiveUsers().size();
+    if (m_sessionManager->getUsername().isEmpty()) {
+        return;
+    }
+
     QSet<QString> currentUsers;
     for(const auto& user : m_activeUsersManager->getActiveUsers()){
         QString username = user.username;
@@ -85,16 +92,21 @@ void UserListPage::displayActiveUsers() {
             addUserToList(username, public_key);
         }
     }
-    for (auto iterator = activeUserLabels.begin(); iterator != activeUserLabels.end(); ++iterator) {
-        if(!currentUsers.contains(iterator.key())) {
-            removeActiveUser(iterator.key());
+// changed
+    QStringList usersToRemove;
+    for (auto it = activeUserLabels.begin(); it != activeUserLabels.end(); ++it) {
+        if(!currentUsers.contains(it.key())) {
+            usersToRemove.append(it.key());
         }
+    }
+    for (const QString& name : usersToRemove) {
+        removeActiveUser(name);
     }
 }
 
 // Funtion to Add User
 void UserListPage::addUserToList(const QString &username, const QString &public_key){
-    QPushButton* userBtn = new QPushButton(username, this);
+    QPushButton* userBtn = new QPushButton(username, ui->LeftScrollWidget);
     userBtn->setStyleSheet(R"(
         QPushButton {
             background-color: white;
@@ -107,13 +119,8 @@ void UserListPage::addUserToList(const QString &username, const QString &public_
     connect(userBtn, &QPushButton::clicked, this, [this, username, public_key]() {
         emit chatRequested(username, public_key);
     });
-    ui-> verticalLayout_3->insertWidget(0, userBtn);
+    ui-> verticalLayout_3->insertWidget(0,userBtn);
     activeUserLabels.insert(username, userBtn);
-
-    // Old Code: did not have signal
-    // QLabel* newLabel = new QLabel(username);
-    // ui->verticalLayout_3->insertWidget(0, newLabel);
-    // activeUserLabels.insert(username, newLabel);
 }
 
 // Funtion to Remove Users (copied from chat branch)
@@ -130,6 +137,9 @@ void UserListPage::removeActiveUser(const QString &username) {
 
 // Function for Exit Button
 void UserListPage::on_pushButton_clicked() {
-    this->close();
+    // Clear Session Data ??
+    m_activeUsersManager->clearActiveUsers();
+    m_sessionManager->clear();
+    emit logoutRequested();
 }
 

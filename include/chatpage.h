@@ -1,10 +1,11 @@
 #ifndef CHATPAGE_H
 #define CHATPAGE_H
 
-#pragma once
 #include <QWidget>
 #include <vector>
-#include <string>
+#include "ActiveUser.h"
+#include "user.h"
+#include <QObject>
 
 class QVBoxLayout;
 class QLabel;
@@ -20,31 +21,39 @@ class ChatPage : public QWidget
 
 public:
     // constructor
-    ChatPage(QWidget *parent = nullptr, User* currentUser = nullptr);
+    ChatPage(QWidget *parent = nullptr, const User myName={} , User partnerName={}, const std::vector<ActiveUser> &initialUser={});
     ~ChatPage();
 
+signals:
+    void backToUserListRequested(); // signal for exit button in chat
+
+public slots:
+    void displayActiveUsers(const std::vector<ActiveUser> &users);
+    void switchToNewChat(const QString &username);
 
 
 private slots:
     // slot functions
     void sendMessage();
-    void clearDisplayedMessages();
 
 private:
     // member attriubutes
     Ui::ChatPage *ui;
-    QVBoxLayout* chatScrollAreaLayout;
-    QVBoxLayout* userListScrollAreaLayout;
-    QHash<QString, QLabel*> activeUserLabels;
-    User* m_currentUser;
+    QVBoxLayout* chatScrollAreaLayout = nullptr;
+    QVBoxLayout* userListScrollAreaLayout = nullptr;
+    QHash<QString, QWidget*> activeUserLabels; // changed to qwidget
+    User m_myName;
+    User m_currentPartnerName;
+    QLabel* chatPartnerLabel;
 
     //helper functions
     QLabel* createNewMessageLabel(const QString &message);
     void displayReceivedMessage(const QString &message);
     void displaySentMessage(const QString &message);
-    void displayActiveUsers(const std::vector<std::string> &users);
     void removeActiveUser(const QString &username);
     void alternateLabelStyle();
+    void clearDisplayedMessages();
+    void clearActiveUserList();
 };
 
 #endif // CHATPAGE_H

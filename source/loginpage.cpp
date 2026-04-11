@@ -58,10 +58,10 @@ LoginPage::LoginPage(QWidget *parent, BackendClient *backendClient)
         }
 
         #pageTitle {
-            font-size: 38pt;
+            font-size: 40pt;
             font-weight: bold;
             margin-bottom: 80px;
-            color: #bacba8;
+            color: #7f906c;
         }
 
         .QPushButton, .QLineEdit {
@@ -74,7 +74,7 @@ LoginPage::LoginPage(QWidget *parent, BackendClient *backendClient)
         }
 
         #loginButton {
-            background-color: #aed683;
+            background-color: #7f906c;
             padding: 6px 10px;
             color: white;
         }
@@ -87,7 +87,7 @@ LoginPage::LoginPage(QWidget *parent, BackendClient *backendClient)
         }
 
         #adminButton {
-            color: #aed683;
+            color: #7f906c;
             background: transparent;
             border: none;
             padding 0;
@@ -149,9 +149,13 @@ void LoginPage::handleLogin() {
     }
     const QString password{ui->passwordLineEdit->text().trimmed()};
     const QString public_key = "12345";
+
     std::string authorizationToken = m_backendClient->sendLogin(username.toStdString(), public_key.toStdString(), password.toStdString());
     const QString message = QString::fromUtf8(authorizationToken.data(), int(authorizationToken.size()));
-    QMessageBox::warning(this, "Joemama", message);
+    if(message.length() == 0) {
+        QMessageBox::warning(this, "Could not login", message);
+        return;
+    }
     emit loginSuccessful(username, public_key, QString::fromStdString(authorizationToken));
 }
 

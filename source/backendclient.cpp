@@ -19,6 +19,7 @@ BackendClient::BackendClient(QObject *parent, SessionManager *sessionManager)
 
 // POST Request for sending login info return authorization token
 // TODO REWORK THIS FUNCTION TO HANDE ADMINS
+// NEED TO DO LOGOUT
 std::string BackendClient::sendLogin(std::string username, std::string public_key, std::string password) {
     // body
     nlohmann::json request_body = {
@@ -35,20 +36,22 @@ std::string BackendClient::sendLogin(std::string username, std::string public_ke
         return "";
     }
     auto json_result = nlohmann::json::parse(result->body);
-
     if (!json_result.contains("authorization_token") ||
         json_result["authorization_token"].is_null()) {
         std::cerr << "Login failed: no authorizationToken in response\n";
         return "";
     }
-
     return json_result["authorization_token"];
 }
 // request active users
 void BackendClient::requestActiveUsers() {
+    // If we don't have a username, don't ping the server (used for exit button)
+    if (m_sessionManager->getUsername().isEmpty()||
+        m_sessionManager->getAuthorizationToken().isEmpty()) {
+        return;
+    }
     nlohmann::json request_body = {
-        {"username", m_sessionManager->getUsername().toStdString()},
-        {"public_key", m_sessionManager->getPublicKey().toStdString()}
+        {"username", m_sessionManager->getUsername().toStdString()}
     };
 
     httplib::Request req;
