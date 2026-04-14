@@ -79,8 +79,8 @@ void UserListPage::displayActiveUsers() {
 
     QSet<QString> currentUsers;
     for(const auto& user : m_activeUsersManager->getActiveUsers()){
-        QString username = user.username;
-        QString public_key = user.public_key;
+        QString username = user.getUsername();
+        QString public_key = user.getPublicKey();
 
         if (username == m_sessionManager->getUsername()) {
             continue;

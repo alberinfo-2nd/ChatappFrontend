@@ -5,14 +5,17 @@ TODO add admin implementation
 */
 // constructor
 void SessionManager::setCurrentUser(const QString &username, const QString &public_key, const QString &authoirizationToken) {
-    m_currentUser.username = username;
-    m_currentUser.public_key = public_key;
-    m_currentUser.authorizationToken = authoirizationToken;
+    m_currentUser.setUsername(username);
+    m_currentUser.setPublicKey(public_key);
+    m_authorizationToken = authoirizationToken;
 }
 
 // clear current session
 void SessionManager::clear() {
-    m_currentUser = {};
+    m_currentUser.setUsername("");
+    m_currentUser.setPublicKey("");
+    m_authorizationToken = "";
+    m_isAdmin = false;
 }
 
 // set to admin
@@ -23,15 +26,15 @@ void SessionManager::setAsAdmin() {
 
 // get username
 QString SessionManager::getUsername() {
-    return m_currentUser.username;
+    return m_currentUser.getUsername();
 }
 
 // get pub key
 QString SessionManager::getPublicKey() {
-    return m_currentUser.public_key;
+    return m_currentUser.getPublicKey();
 }
 
 // get auth token
 QString SessionManager::getAuthorizationToken() {
-    return m_currentUser.authorizationToken;
+    return m_authorizationToken;
 }

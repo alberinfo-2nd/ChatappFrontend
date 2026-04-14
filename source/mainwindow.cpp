@@ -59,8 +59,6 @@ void MainWindow::showChatPage() {
 // used to handle succesful logins
 void MainWindow::handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken) {
     sessionManager->setCurrentUser(username, public_key, authorizationToken);
-    this->m_currentUser.username = username;
-    this->m_currentUser.public_key = public_key;
     // testing
     /*
     std::cout << "Username: " << sessionManager->getUsername().toStdString() << std::endl <<
@@ -88,14 +86,11 @@ void MainWindow::handleSuccessfulLogin(const QString &username, const QString &p
 //used to handle chat requests
 //TODO no impementation add yet
 void MainWindow::handleChatRequest(const QString &username, const QString &public_key) {
-    User partner;
-    partner.username = username;
-    partner.public_key = public_key;
+    User partner(username, public_key);
 
 
     if (!chatPage) {
-        chatPage = new ChatPage(ui->stackedWidget, this->m_currentUser, partner,
-        activeUsersManager->getActiveUsers());
+        chatPage = new ChatPage(ui->stackedWidget, sessionManager, activeUsersManager, partner);
         ui->stackedWidget->addWidget(chatPage);
 
         connect(chatPage, &ChatPage::backToUserListRequested,

@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <vector>
-#include "ActiveUser.h"
+#include "user.h"
 /**************************************************************
 Class manager for all of the current logged in users
 used mainly for storing updated list of active users and
@@ -19,13 +19,13 @@ public:
     explicit ActiveUsersManager(QObject *parent = nullptr);
 
     // set the active users array
-    void setActiveUsers(const std::vector<ActiveUser> &users);
+    void setActiveUsers(const std::vector<User> &users);
 
     // clear everying in array
     void clearActiveUsers();
 
     // return a vector of the active users
-    std::vector<ActiveUser> getActiveUsers() const;
+    std::vector<User> getActiveUsers() const;
 signals:
     /***********************************************************
     signal for user list page and chat page to listen for so
@@ -35,7 +35,7 @@ signals:
 
 private:
     // data member for storing an array of active users
-    std::vector<ActiveUser> m_activeUsers{};
+    std::vector<User> m_activeUsers{};
 
 
 };

@@ -8,10 +8,24 @@ This will later be changed to a class
 until then this works
 *****************************************/
 
-struct User {
-    QString username;
-    QString public_key;
-    QString authorizationToken;
+class User {
+public:
+    //constructor
+    //default
+    User();
+    //parameterized
+    User(QString username, QString publicKey);
+
+    //setters
+    void setUsername(const QString &username);
+    void setPublicKey(const QString &publicKey);
+
+    //getters
+    QString getUsername() const;
+    QString getPublicKey() const;
+private:
+    QString m_username;
+    QString m_publicKey;
 };
 
 #endif

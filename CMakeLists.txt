@@ -36,6 +36,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         include/SessionManager.h
         source/SessionManager.cpp
         include/ActiveUser.h
+        source/user.cpp
 
 
 

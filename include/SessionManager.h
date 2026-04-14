@@ -31,6 +31,7 @@ public:
 
 private:
     User m_currentUser{};
+    QString m_authorizationToken;
     bool m_isAdmin{false};
 };
 

@@ -77,9 +77,9 @@ void BackendClient::requestActiveUsers() {
 
     auto json_result = nlohmann::json::parse(result->body);
 
-    std::vector<ActiveUser> users;
+    std::vector<User> users;
     for (const auto& user : json_result["users"]) {
-        users.push_back({
+        users.push_back(User{
             QString::fromStdString(user.value("username", "")),
             QString::fromStdString(user.value("public_key", ""))
         });

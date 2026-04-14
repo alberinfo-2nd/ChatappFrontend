@@ -1,19 +1,27 @@
 #include <user.h>
 
-User::User(std::string username, std::string authorizationToken, std::string publicKey)
+User::User()
+    : m_username{""}
+    , m_publicKey{""}
+{}
+
+User::User(QString username, QString publicKey)
     : m_username{username}
-    , m_authorizationToken{authorizationToken}
     , m_publicKey{publicKey}
 {}
 
-std::string User::getUsername() {
+void User::setUsername(const QString &username) {
+    m_username = username;
+}
+
+void User::setPublicKey(const QString &publicKey) {
+    m_publicKey = publicKey;
+}
+
+QString User::getUsername() const{
     return m_username;
 }
 
-std::string User::getAuthorizationToken() {
-    return m_authorizationToken;
-}
-
-std::string User::getPublicKey() {
+QString User::getPublicKey() const{
     return m_publicKey;
 }

@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "user.h"
 
 // Foward declaration of classes used
 class LoginPage;
@@ -39,7 +38,6 @@ private slots:
 // Declaring Member attributes
 private:
     Ui::MainWindow *ui;
-    User m_currentUser;
     SessionManager *sessionManager;
     ActiveUsersManager *activeUsersManager;
     BackendClient *backendClient;

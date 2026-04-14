@@ -2,10 +2,10 @@
 #define CHATPAGE_H
 
 #include <QWidget>
-#include <vector>
-#include "ActiveUser.h"
 #include "user.h"
 #include <QObject>
+#include "ActiveUsersManager.h"
+#include "sessionManager.h"
 
 class QVBoxLayout;
 class QLabel;
@@ -21,14 +21,14 @@ class ChatPage : public QWidget
 
 public:
     // constructor
-    ChatPage(QWidget *parent = nullptr, const User myName={} , User partnerName={}, const std::vector<ActiveUser> &initialUser={});
+    ChatPage(QWidget *parent = nullptr, SessionManager *sessionManager = nullptr, ActiveUsersManager *activeUsersManager = nullptr, User partnerName={});
     ~ChatPage();
 
 signals:
     void backToUserListRequested(); // signal for exit button in chat
 
 public slots:
-    void displayActiveUsers(const std::vector<ActiveUser> &users);
+    void displayActiveUsers();
     void switchToNewChat(const QString &username);
 
 
@@ -39,10 +39,11 @@ private slots:
 private:
     // member attriubutes
     Ui::ChatPage *ui;
-    QVBoxLayout* chatScrollAreaLayout = nullptr;
-    QVBoxLayout* userListScrollAreaLayout = nullptr;
+    QVBoxLayout *chatScrollAreaLayout = nullptr;
+    QVBoxLayout *userListScrollAreaLayout = nullptr;
     QHash<QString, QWidget*> activeUserLabels; // changed to qwidget
-    User m_myName;
+    SessionManager *m_sessionManager;
+    ActiveUsersManager *m_activeUsersManager;
     User m_currentPartnerName;
     QLabel* chatPartnerLabel;
 
