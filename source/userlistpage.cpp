@@ -61,7 +61,7 @@ UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, Acti
     }
 )");
     // connect signal from active users manager to display active users everytime the list is updated
-    connect(activeUsersManager, &ActiveUsersManager::activeUsersUpdated, this, &UserListPage::displayActiveUsers);
+    connect(m_activeUsersManager, &ActiveUsersManager::activeUsersUpdated, this, &UserListPage::displayActiveUsers);
 }
 
 UserListPage::~UserListPage()

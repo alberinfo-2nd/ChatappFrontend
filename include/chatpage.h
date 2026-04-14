@@ -6,10 +6,11 @@
 #include <QObject>
 #include "ActiveUsersManager.h"
 #include "sessionManager.h"
+#include "BackendClient.h"
+#include "user.h"
 
 class QVBoxLayout;
 class QLabel;
-class User;
 
 namespace Ui {
 class ChatPage;
@@ -21,7 +22,7 @@ class ChatPage : public QWidget
 
 public:
     // constructor
-    ChatPage(QWidget *parent = nullptr, SessionManager *sessionManager = nullptr, ActiveUsersManager *activeUsersManager = nullptr, User partnerName={});
+    ChatPage(QWidget *parent = nullptr, SessionManager *sessionManager = nullptr, ActiveUsersManager *activeUsersManager = nullptr, BackendClient *backendClient = nullptr, User partnerName={});
     ~ChatPage();
 
 signals:
@@ -44,12 +45,13 @@ private:
     QHash<QString, QWidget*> activeUserLabels; // changed to qwidget
     SessionManager *m_sessionManager;
     ActiveUsersManager *m_activeUsersManager;
-    User m_currentPartnerName;
+    BackendClient *m_backendClient;
+    User m_currentPartner;
     QLabel* chatPartnerLabel;
 
     //helper functions
     QLabel* createNewMessageLabel(const QString &message);
-    void displayReceivedMessage(const QString &message);
+    void displayReceivedMessage();
     void displaySentMessage(const QString &message);
     void removeActiveUser(const QString &username);
     void alternateLabelStyle();

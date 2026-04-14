@@ -3,7 +3,7 @@
 #include "chatpage.h"
 #include "loginpage.h"
 #include "userlistpage.h"
-#include "SessionManager.h"
+#include "sessionManager.h"
 #include "ActiveUsersManager.h"
 #include "BackendClient.h"
 
@@ -70,8 +70,9 @@ void MainWindow::handleSuccessfulLogin(const QString &username, const QString &p
     ui->stackedWidget->addWidget(userListPage);
     ui->stackedWidget->setCurrentWidget(userListPage);
     connect(backendClient, &BackendClient::activeUsersReceived, activeUsersManager, &ActiveUsersManager::setActiveUsers);
+    connect(backendClient, &BackendClient::messageReceived, sessionManager, &SessionManager::addMessages);
     backendClient->requestActiveUsers();
-    backendClient->startActiveUserPolling();
+    backendClient->startPolling();
     connect(userListPage, &UserListPage::chatRequested, this, &MainWindow::handleChatRequest);
     connect(userListPage, &UserListPage::logoutRequested, this, [this](){
         qDebug()<<"User has logged out. Session Cleared";
@@ -90,7 +91,7 @@ void MainWindow::handleChatRequest(const QString &username, const QString &publi
 
 
     if (!chatPage) {
-        chatPage = new ChatPage(ui->stackedWidget, sessionManager, activeUsersManager, partner);
+        chatPage = new ChatPage(ui->stackedWidget, sessionManager, activeUsersManager, backendClient, partner);
         ui->stackedWidget->addWidget(chatPage);
 
         connect(chatPage, &ChatPage::backToUserListRequested,

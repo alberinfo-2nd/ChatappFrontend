@@ -1,6 +1,5 @@
 #include "chatpage.h"
 #include "ui_chatpage.h"
-#include "user.h"
 #include <QLabel>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -8,12 +7,13 @@
 #include <QPushButton>
 
 // constructor
-ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersManager *activeUsersManager, User partnerName)
+ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersManager *activeUsersManager, BackendClient *backendClient, User partner)
     : QWidget(parent)
     , ui(new Ui::ChatPage)
     , m_sessionManager{sessionManager}
     , m_activeUsersManager{activeUsersManager}
-    , m_currentPartnerName{partnerName}
+    , m_backendClient{backendClient}
+    , m_currentPartner{partner}
 // constructor body
 {
     ui->setupUi(this);
@@ -43,7 +43,7 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
     bubble->setStyleSheet("background-color: white;" "border-radius: 20px;" "padding: 2px 20px;");
     QHBoxLayout* bubbleLayout = new QHBoxLayout(bubble);
 
-    chatPartnerLabel = new QLabel(partnerName.getUsername(), bubble);
+    chatPartnerLabel = new QLabel(m_currentPartner.getUsername(), bubble);
     chatPartnerLabel->setStyleSheet("color: black; font-size: 18pt; font-weight: bold;");
     bubbleLayout->addWidget(chatPartnerLabel);
 
@@ -99,8 +99,6 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
         }
     )");
 
-// TESTTTTT
-displayReceivedMessage("Hiiiiiiiiiiii");
 
 // exit button
     connect(ui->pushButton, &QPushButton::clicked, this, [this]() {
@@ -108,6 +106,11 @@ displayReceivedMessage("Hiiiiiiiiiiii");
         emit backToUserListRequested();
     });
     displayActiveUsers();
+
+    // connect signal from active users manager to display active users everytime the list is updated
+    connect(m_activeUsersManager, &ActiveUsersManager::activeUsersUpdated, this, &ChatPage::displayActiveUsers);
+    connect(m_sessionManager, &SessionManager::inboxUpdated, this, &ChatPage::displayReceivedMessage);
+
 }
 
 
@@ -126,13 +129,22 @@ QLabel* ChatPage::createNewMessageLabel(const QString &message) {
 }
 
 // displays recieved message (different color, align left)
-void ChatPage::displayReceivedMessage(const QString &message) {
-    QLabel* messageLabel = createNewMessageLabel(message);
-    chatScrollAreaLayout->setAlignment(messageLabel, Qt::AlignLeft);
-    chatScrollAreaLayout->addWidget(messageLabel);
-    messageLabel->setStyleSheet("background-color: #7f906c; color:white; border-radius: 12px; padding: 8px 15px;");
+void ChatPage::displayReceivedMessage() {
+    std::cout << "updaing ui\n";
+    auto& inbox = m_sessionManager->getInbox();
+    for (size_t i{0}; i < inbox.size(); ) {
+        Message message = inbox.at(i);
+        if (message.getSender() == m_currentPartner.getUsername()) {
+            QLabel* messageLabel = createNewMessageLabel(message.getMessage());
+            chatScrollAreaLayout->setAlignment(messageLabel, Qt::AlignLeft);
+            chatScrollAreaLayout->addWidget(messageLabel);
+            messageLabel->setStyleSheet("background-color: #7f906c; color:white; border-radius: 12px; padding: 8px 15px;");
+            m_sessionManager->removeMessage(i);
+        } else {
+            ++i;
+        }
+    }
 }
-
 // dsiplays sent message (different color, align right)
 void ChatPage::displaySentMessage(const QString &message) {
     QLabel* messageLabel = createNewMessageLabel(message);
@@ -147,6 +159,7 @@ void ChatPage::sendMessage() {
     ui->messageLineEdit->clear();
     if (!message.isEmpty()) {
         displaySentMessage(message);
+        m_backendClient->sendMessage(m_currentPartner.getUsername().toStdString(), message.toStdString());
     }
 }
 
@@ -160,7 +173,7 @@ void ChatPage::displayActiveUsers() {
     for (const auto& user : m_activeUsersManager->getActiveUsers()) {
         QString username = user.getUsername();
         // dont show self/ user talking to
-       if (username == myName || username == m_currentPartnerName.getUsername()) continue;
+       if (username == myName || username == m_currentPartner.getUsername()) continue;
 
        // Row container (replaces old userLabel)
        QWidget* rowWidget = new QWidget(ui->userListScrollAreaContent);
@@ -232,7 +245,7 @@ void ChatPage::clearDisplayedMessages() {
 void ChatPage::switchToNewChat(const QString &username) {
     clearDisplayedMessages();
     chatScrollAreaLayout->addStretch();
-    m_currentPartnerName.setUsername(username);
+    m_currentPartner.setUsername(username);
     chatPartnerLabel->setText(username);
 }
 

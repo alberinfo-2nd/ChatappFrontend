@@ -4,6 +4,11 @@ Used to manage the currently logged in user that the front end can keep track of
 TODO add admin implementation
 */
 // constructor
+SessionManager::SessionManager(QObject *parent)
+    : QObject(parent)
+{
+}
+
 void SessionManager::setCurrentUser(const QString &username, const QString &public_key, const QString &authoirizationToken) {
     m_currentUser.setUsername(username);
     m_currentUser.setPublicKey(public_key);
@@ -37,4 +42,22 @@ QString SessionManager::getPublicKey() {
 // get auth token
 QString SessionManager::getAuthorizationToken() {
     return m_authorizationToken;
+}
+
+void SessionManager::addMessages(const std::vector<Message> &messages) {
+    for (const auto &message : messages)
+        m_inbox.push_back(message);
+
+    inboxUpdated();
+}
+
+void SessionManager::removeMessage(size_t &index) {
+    if (m_inbox.empty()) {
+        return;
+    }
+    m_inbox.erase(m_inbox.begin() + index);
+}
+
+const std::vector<Message>& SessionManager::getInbox() const{
+    return m_inbox;
 }

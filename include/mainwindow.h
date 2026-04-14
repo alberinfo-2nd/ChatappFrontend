@@ -46,6 +46,6 @@ private:
     LoginPage *loginPage;
     UserListPage *userListPage;
     ChatPage *chatPage;
-    ChatPage* currentChatPage = nullptr;
+    ChatPage *currentChatPage = nullptr;
 };
 #endif // MAINWINDOW_H

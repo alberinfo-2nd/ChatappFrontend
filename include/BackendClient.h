@@ -7,6 +7,7 @@
 #include <httplib.h>
 #include <QTimer>
 #include "user.h"
+#include "message.h"
 /************************************************************************************
 manager for connecting to the backend and sending and recieving requests.
 Becomes a QObject so that the class can emit signals, also has a timer
@@ -32,25 +33,27 @@ public:
     void requestActiveUsers();
 
     // used to start polling active users (sets the timer to 5 seconds)
-    void startActiveUserPolling(int intervals = 5000);
+    void startPolling();
 
     // turns timer off
-    void stopActiveUserPolling();
+    void stopPolling();
+
+    void sendMessage(const std::string &recipient, const std::string &message);
+
+    void requestMessages();
 
 signals:
     // signal used to send activeUserManager the newly updated list of atcive users
     void activeUsersReceived(const std::vector<User> &users);
     // signal for updating message inbox
-    void messageReceived(const std::string username, std::string message);
+    void messageReceived(const std::vector<Message> &messages);
 
 private:
     // data members
     httplib::Client m_client;
     SessionManager* m_sessionManager;
     QTimer* m_activeUsersTimer;
-
-    void sendMessage(std::string senderUsername, std::string recieverUsername, std::string authorizationToken, std::string message);
-    void requestMessages(std::string username, std::string authorizationToken);
+    QTimer* m_messagesTimer;
 };
 
 #endif // BACKENDCLIENT_H
