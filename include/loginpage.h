@@ -19,7 +19,7 @@ public:
 
 signals:
     // signal for main window to listen for
-    void loginSuccessful(QString username, QString public_key, QString authorizationToken);
+    void loginSuccessful(QString username, QString public_key, QString authorizationToken, bool isAdmin = false);
 
 private slots:
     // slot for toggling between User and Admin mode

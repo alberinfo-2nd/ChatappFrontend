@@ -36,16 +36,49 @@ std::string BackendClient::sendLogin(std::string username, std::string public_ke
 
     if (!result) {
         std::cerr << "HTTP request failed\n";
-        return "";
+        return "Request failed";
     }
+
+    std::clog << "Server response body: " << result->body << std::endl;
+
     auto json_result = nlohmann::json::parse(result->body);
-    if (!json_result.contains("authorization_token") ||
-        json_result["authorization_token"].is_null()) {
-        std::cerr << "Login failed: no authorizationToken in response\n";
-        return "";
+
+    if (json_result["status"] == "Failed") {
+        return json_result["message"];
     }
+
     return json_result["authorization_token"];
 }
+
+void BackendClient::logout(std::string username, std::string authorizationToken) {
+    nlohmann::json request_body = {
+        {"username", username}
+    };
+
+    httplib::Request req;
+    req.method = "POST";
+    req.path = "/logout";
+    req.body = request_body.dump();
+    req.headers = {
+        {"Content-Type", "application/json"},
+        {"authorizationToken", authorizationToken}
+    };
+
+    auto result = m_client.send(req);
+
+    if (!result) {
+        std::cerr << "HTTP request failed\n";
+        return;
+    }
+
+    if (result->status != 200) {
+        std::cerr << "Request failed with status " << result->status << ": " << result->body << std::endl;
+        return;
+    }
+
+    std::clog << "Server response body: " << result->body << std::endl;
+}
+
 // request active users
 void BackendClient::requestActiveUsers() {
     // If we don't have a username, don't ping the server (used for exit button)

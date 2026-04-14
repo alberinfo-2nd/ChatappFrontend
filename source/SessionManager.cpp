@@ -44,6 +44,10 @@ QString SessionManager::getAuthorizationToken() {
     return m_authorizationToken;
 }
 
+bool SessionManager::getIsAdmin() {
+    return m_isAdmin;
+}
+
 void SessionManager::addMessages(const std::vector<Message> &messages) {
     for (const auto &message : messages)
         m_inbox.push_back(message);

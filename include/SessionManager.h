@@ -33,6 +33,8 @@ public:
     // get auth token
     QString getAuthorizationToken();
 
+    bool getIsAdmin();
+
     void addMessages(const std::vector<Message> &messages);
 
     void removeMessage(size_t &index);

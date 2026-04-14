@@ -28,6 +28,8 @@ public:
     // POST request for sending the login info to the backend returns authorization token
     std::string sendLogin(std::string username, std::string public_key, std::string password = "");
 
+    void logout(std::string username, std::string authorizationToken);
+
     // GET request for requesting active users emits activeUsersReceived if succesful which is connected
     // to setActiveUsers function keeping the list up to date
     void requestActiveUsers();

@@ -32,7 +32,7 @@ private slots:
     void showLoginPage();
     void showUserListPage();
     void showChatPage();
-    void handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken);
+    void handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken, const bool &isAdmin);
     void handleChatRequest(const QString &username, const QString &publick_key);
 
 // Declaring Member attributes

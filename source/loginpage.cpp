@@ -137,8 +137,9 @@ void LoginPage::toggleLoginMode() {
 // slot function for handling login requests (emits loginSuccessful signal)
 // TODO update function for handling admin logins
 void LoginPage::handleLogin() {
-
-    const QString username{ ui->usernameLineEdit->text().trimmed() };
+    const bool isAdmin{m_mode == LoginMode::Admin};
+    const QString username{ui->usernameLineEdit->text().trimmed()};
+    const QString password{ui->passwordLineEdit->text().trimmed()};
 
     if (username.isEmpty() || username.size() < 5) {
         QMessageBox::warning(this, "Login", "Username must be atleast 5 characters");
@@ -147,15 +148,32 @@ void LoginPage::handleLogin() {
         QMessageBox::warning(this, "Login", "Username can't contain spaces");
         return;
     }
-    const QString password{ui->passwordLineEdit->text().trimmed()};
+
+    if (m_mode == LoginMode::Admin) {
+        if (password.isEmpty()) {
+            QMessageBox::warning(this, "Warning", "Password can't empty");
+            return;
+        } else if (password.contains(' ')) {
+            QMessageBox::warning(this, "Warning", "Password can't contain spaces");
+            return;
+        }
+    }
+
     const QString public_key = "12345";
 
     std::string authorizationToken = m_backendClient->sendLogin(username.toStdString(), public_key.toStdString(), password.toStdString());
-    const QString message = QString::fromUtf8(authorizationToken.data(), int(authorizationToken.size()));
-    if(message.length() == 0) {
-        QMessageBox::warning(this, "Could not login", message);
+    const QString message = QString::fromStdString(authorizationToken);
+    if(message == "Request failed"
+        || message == "User is already logged in!"
+        || message == "Login failed"
+        || message == "Administrator not found!"
+        || message == "Invalid password!"
+        )
+    {
+        QMessageBox::warning(this, "Warning", message);
         return;
     }
-    emit loginSuccessful(username, public_key, QString::fromStdString(authorizationToken));
+
+    emit loginSuccessful(username, public_key, QString::fromStdString(authorizationToken), isAdmin);
 }
 

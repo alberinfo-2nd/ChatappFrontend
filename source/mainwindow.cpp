@@ -39,6 +39,8 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete sessionManager;
+    delete activeUsersManager;
+    delete backendClient;
 }
 
 // MainWindow slot function to show Login Page
@@ -57,8 +59,11 @@ void MainWindow::showChatPage() {
 }
 
 // used to handle succesful logins
-void MainWindow::handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken) {
+void MainWindow::handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken, const bool &isAdmin) {
     sessionManager->setCurrentUser(username, public_key, authorizationToken);
+    if (isAdmin) {
+        sessionManager->setAsAdmin();
+    }
     // testing
     /*
     std::cout << "Username: " << sessionManager->getUsername().toStdString() << std::endl <<
@@ -77,6 +82,9 @@ void MainWindow::handleSuccessfulLogin(const QString &username, const QString &p
     connect(userListPage, &UserListPage::logoutRequested, this, [this](){
         qDebug()<<"User has logged out. Session Cleared";
 
+        backendClient->logout(sessionManager->getUsername().toStdString(), sessionManager->getAuthorizationToken().toStdString());
+        sessionManager->clear();
+        backendClient->stopPolling();
         ui->stackedWidget->setCurrentIndex(-1);
         ui->stackedWidget->addWidget(loginPage);
         showLoginPage();

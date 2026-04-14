@@ -130,7 +130,6 @@ QLabel* ChatPage::createNewMessageLabel(const QString &message) {
 
 // displays recieved message (different color, align left)
 void ChatPage::displayReceivedMessage() {
-    std::cout << "updaing ui\n";
     auto& inbox = m_sessionManager->getInbox();
     for (size_t i{0}; i < inbox.size(); ) {
         Message message = inbox.at(i);
@@ -167,7 +166,8 @@ void ChatPage::sendMessage() {
 // used to display a label for each active user
 void ChatPage::displayActiveUsers() {
     clearActiveUserList();
-     QString myName = m_sessionManager->getUsername();
+    QString myName = m_sessionManager->getUsername();
+    auto& inbox = m_sessionManager->getInbox();
 
 
     for (const auto& user : m_activeUsersManager->getActiveUsers()) {
@@ -201,6 +201,8 @@ void ChatPage::displayActiveUsers() {
     }
     ui->userListScrollAreaContent->adjustSize();
     alternateLabelStyle();
+
+
 }
 
 // used to delete label assiociated to an active user
