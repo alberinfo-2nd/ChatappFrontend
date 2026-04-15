@@ -47,11 +47,15 @@ public:
     // used for the reported users
     void reportUser(const std::string &reportedUser);
 
+    std::string kick(std::string username);
+
 signals:
     // signal used to send activeUserManager the newly updated list of atcive users
     void activeUsersReceived(const std::vector<User> &users);
     // signal for updating message inbox
     void messageReceived(const std::vector<Message> &messages);
+
+    void userKicked(bool kicked);
 
 private:
     // data members

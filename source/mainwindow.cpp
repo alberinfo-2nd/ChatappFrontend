@@ -6,6 +6,7 @@
 #include "sessionManager.h"
 #include "ActiveUsersManager.h"
 #include "BackendClient.h"
+#include <QMessageBox>
 
 // Constructor of MainWindow Creates a pointer for each QWidget object(page)
 MainWindow::MainWindow(QWidget *parent)
@@ -15,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     , activeUsersManager(new ActiveUsersManager(this))
     , backendClient(new BackendClient(this, sessionManager))
     , loginPage(new LoginPage(this, backendClient))
-    , userListPage(new UserListPage(this, sessionManager, activeUsersManager))
+    , userListPage(new UserListPage(this, sessionManager, activeUsersManager, backendClient))
     , chatPage(nullptr)
 
 {
@@ -23,24 +24,41 @@ MainWindow::MainWindow(QWidget *parent)
 
     // add each QWidget object(page) to stackedWidget
     ui->stackedWidget->addWidget(loginPage);
-   // ui->stackedWidget->addWidget(chatPage);
-   // ui->stackedWidget->addWidget(userListPage);
+    ui->stackedWidget->addWidget(userListPage);
 
     // set Login Page as the default page to display
     ui->stackedWidget->setCurrentWidget(loginPage);
 
     // connects signal from login page (loginSuccesful) to slot function (showUserListPage) which changes the current displayed
-    // stacked widget to User List Page
+    auto handleLogout = [this](bool kicked = false){
+        qDebug()<<"User has logged out. Session Cleared";
+        backendClient->logout(sessionManager->getUsername().toStdString(), sessionManager->getAuthorizationToken().toStdString());
+        sessionManager->clear();
+        backendClient->stopPolling();
+        showLoginPage();
+        if (kicked) {
+            QMessageBox::warning(this, "Warning", "You have been kicked by an admin!");
+        }
+    };
     connect(loginPage, &LoginPage::loginSuccessful, this, &MainWindow::handleSuccessfulLogin);
+    connect(userListPage, &UserListPage::chatRequested, this, &MainWindow::handleChatRequest);
+    connect(userListPage, &UserListPage::logoutRequested, this, handleLogout);
+    connect(backendClient, &BackendClient::userKicked, this, handleLogout);
+    connect(backendClient, &BackendClient::activeUsersReceived, activeUsersManager, &ActiveUsersManager::setActiveUsers);
+    connect(backendClient, &BackendClient::messageReceived, sessionManager, &SessionManager::addMessages);
+    // runs destructor when window is closed
+    this->setAttribute(Qt::WA_DeleteOnClose);
 }
 
 // MainWindow destructor
 MainWindow::~MainWindow()
 {
+    backendClient->logout(sessionManager->getUsername().toStdString(), sessionManager->getAuthorizationToken().toStdString());
     delete ui;
     delete sessionManager;
     delete activeUsersManager;
     delete backendClient;
+
 }
 
 // MainWindow slot function to show Login Page
@@ -51,6 +69,7 @@ void MainWindow::showLoginPage() {
 // MainWindow slot function to show User List Page
 void MainWindow::showUserListPage() {
     ui->stackedWidget->setCurrentWidget(userListPage);
+    chatPage->setChatPartner("");
 }
 
 //MainWindow function to show Chat Page
@@ -72,24 +91,10 @@ void MainWindow::handleSuccessfulLogin(const QString &username, const QString &p
     */
 
     // MOVED STUFF HERE - FIXED EXIT BUTTON
-    ui->stackedWidget->addWidget(userListPage);
+
     ui->stackedWidget->setCurrentWidget(userListPage);
-    connect(backendClient, &BackendClient::activeUsersReceived, activeUsersManager, &ActiveUsersManager::setActiveUsers);
-    connect(backendClient, &BackendClient::messageReceived, sessionManager, &SessionManager::addMessages);
     backendClient->requestActiveUsers();
     backendClient->startPolling();
-    connect(userListPage, &UserListPage::chatRequested, this, &MainWindow::handleChatRequest);
-    connect(userListPage, &UserListPage::logoutRequested, this, [this](){
-        qDebug()<<"User has logged out. Session Cleared";
-
-        backendClient->logout(sessionManager->getUsername().toStdString(), sessionManager->getAuthorizationToken().toStdString());
-        sessionManager->clear();
-        backendClient->stopPolling();
-        ui->stackedWidget->setCurrentIndex(-1);
-        ui->stackedWidget->addWidget(loginPage);
-        showLoginPage();
-        connect(loginPage, &LoginPage::loginSuccessful, this, &MainWindow::handleSuccessfulLogin);
-    });
 }
 
 //used to handle chat requests

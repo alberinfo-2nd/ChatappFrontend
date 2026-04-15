@@ -159,7 +159,6 @@ void LoginPage::handleLogin() {
             return;
         }
     }
-
     const QString public_key = "12345";
 
     std::string authorizationToken = m_backendClient->sendLogin(username.toStdString(), public_key.toStdString(), password.toStdString());
@@ -169,6 +168,7 @@ void LoginPage::handleLogin() {
         || message == "Login failed"
         || message == "Administrator not found!"
         || message == "Invalid password!"
+        || message == "Username belongs to an admin!"
         )
     {
         QMessageBox::warning(this, "Warning", message);

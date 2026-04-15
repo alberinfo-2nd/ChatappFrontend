@@ -26,6 +26,7 @@ public:
     // constructor
     ChatPage(QWidget *parent = nullptr, SessionManager *sessionManager = nullptr, ActiveUsersManager *activeUsersManager = nullptr, BackendClient *backendClient = nullptr, User partnerName={});
     ~ChatPage();
+    void setChatPartner(QString username);
 
 signals:
     void backToUserListRequested(); // signal for exit button in chat

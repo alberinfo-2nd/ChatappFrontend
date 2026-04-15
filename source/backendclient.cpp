@@ -10,7 +10,7 @@
 // constructor most important added attribute is the pointer to the sessionManager
 BackendClient::BackendClient(QObject *parent, SessionManager *sessionManager)
     : QObject(parent)
-    , m_client("127.0.0.1", 8080)
+    , m_client("10.100.150.71", 8080)
     , m_activeUsersTimer(new QTimer(this))
     , m_messagesTimer(new QTimer(this))
     , m_sessionManager{sessionManager}
@@ -106,12 +106,12 @@ void BackendClient::requestActiveUsers() {
         return;
     }
 
+    auto json_result = nlohmann::json::parse(result->body);
     if (result->status != 200) {
         std::cerr << "Request failed with status " << result->status << ": " << result->body << std::endl;
+        if(json_result["message"] == "Invalid authorization token or username")     emit userKicked(true);
         return;
     }
-
-    auto json_result = nlohmann::json::parse(result->body);
 
     std::vector<User> users;
     for (const auto& user : json_result["users"]) {
@@ -121,21 +121,20 @@ void BackendClient::requestActiveUsers() {
         });
     }
 
-    if (!users.empty()) {
-        emit activeUsersReceived(users);
-    }
+    emit activeUsersReceived(users);
+
     return;
 }
 
 // start polling timer for both request messages and request active users(start timer)
 void BackendClient::startPolling() {
-    m_activeUsersTimer->start(4000);
-    m_messagesTimer->start(4000);
+    m_activeUsersTimer->start(2000);
+    m_messagesTimer->start(2000);
 
     requestActiveUsers();
-    QTimer::singleShot(2000, this, [this]() {
+    QTimer::singleShot(1000, this, [this]() {
     requestMessages();
-    m_messagesTimer->start(4000);
+    m_messagesTimer->start(2000);
     });
 }
 
@@ -178,7 +177,7 @@ void BackendClient::reportUser(const std::string &reportedUser){
     nlohmann::json request_body = {
         {"username", m_sessionManager->getUsername().toStdString()},
         {"reportedUser", reportedUser}
-};
+    };
     httplib::Request req;
     req.method = "POST";
     req.path = "/report";
@@ -186,8 +185,11 @@ void BackendClient::reportUser(const std::string &reportedUser){
     req.headers = {
         {"Content-Type", "application/json"},
         {"authorizationToken", m_sessionManager->getAuthorizationToken().toStdString()}
-};
+    };
     auto result = m_client.send(req);
+
+    std::clog << "Server response body: " << result->body << std::endl;
+
     if (!result){
         std::cerr<<"Could not reach server"<<std::endl;
         return;
@@ -200,9 +202,9 @@ void BackendClient::reportUser(const std::string &reportedUser){
             }
         } else {
             std::clog << "Server returned an empty body with status: " << result->status << std::endl; }
-    }
+}
 
-    void BackendClient::requestMessages() {
+void BackendClient::requestMessages() {
     if (m_sessionManager->getUsername().isEmpty() ||
         m_sessionManager->getAuthorizationToken().isEmpty()) {
         return;
@@ -260,4 +262,39 @@ void BackendClient::reportUser(const std::string &reportedUser){
         emit messageReceived(messages);
     }
 }
+
+std::string BackendClient::kick(std::string username) {
+    nlohmann::json request_body = {
+        {"username", m_sessionManager->getUsername().toStdString()},
+        {"kickedUser", username}
+    };
+
+    httplib::Request req;
+    req.method = "POST";
+    req.path = "/kick";
+    req.body = request_body.dump();
+    req.headers = {
+        {"Content-Type", "application/json"},
+        {"authorizationToken", m_sessionManager->getAuthorizationToken().toStdString()}
+    };
+
+    auto result = m_client.send(req);
+
+
+    if (!result) {
+        std::cerr << "HTTP request failed\n";
+        return "Request failed";
+    }
+
+    std::clog << "Server response body: " << result->body << std::endl;
+
+    auto json_result = nlohmann::json::parse(result->body);
+
+    if (json_result["status"] == "Failed") {
+        return json_result["message"];
+    }
+
+    return json_result["message"];
+}
+
 #endif

@@ -168,6 +168,7 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
     // connect signal from active users manager to display active users everytime the list is updated
     connect(m_activeUsersManager, &ActiveUsersManager::activeUsersUpdated, this, &ChatPage::displayActiveUsers);
     connect(m_sessionManager, &SessionManager::inboxUpdated, this, &ChatPage::displayReceivedMessage);
+    connect(m_sessionManager, &SessionManager::inboxUpdated, this, &ChatPage::displayActiveUsers);
 
 }
 
@@ -176,6 +177,10 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
 ChatPage::~ChatPage()
 {
     delete ui;
+}
+
+void ChatPage::setChatPartner(QString username) {
+    m_currentPartner.setUsername(username);
 }
 
 // Message Display Logic
@@ -263,9 +268,39 @@ void ChatPage::displayActiveUsers() {
 
        //userBtn->setStyleSheet("background: white; color: black; font-size: 16pt;");
        userBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+       QPushButton* kickBtn = new QPushButton("Kick", rowWidget);
+
+       userBtn->setStyleSheet("background: white; color: black; font-size: 16pt;");
+
+       kickBtn->setStyleSheet("background: white; color: black; font-size: 16pt;");
+       kickBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+       int numberOfMessages{0};
+       for (size_t i{1}; i <= inbox.size(); ++i) {
+           const QString sender = inbox.at(i - 1).getSender();
+           if (sender == username && sender != m_currentPartner.getUsername()) {
+               numberOfMessages++;
+           }
+       }
+
+       if (numberOfMessages != 0) {
+           userBtn->setText(username + "   [" + QString::number(numberOfMessages) + "]");
+       }
 
        rowLayout->addWidget(userBtn);
-       rowLayout->addStretch();
+       rowLayout->addWidget(kickBtn);
+
+       rowLayout->setStretchFactor(userBtn, 4);
+       rowLayout->setStretchFactor(kickBtn, 1);
+
+       kickBtn->hide();
+       if (m_sessionManager->getIsAdmin()) {
+           kickBtn->show();
+           connect(kickBtn, &QPushButton::clicked, this, [this, username]() {
+               m_backendClient->kick(username.toStdString());
+           });
+
+       }
 
        // connect button to switch to another user
         connect(userBtn, &QPushButton::clicked, this, [this, username]() {
@@ -356,6 +391,8 @@ void ChatPage::switchToNewChat(const QString &username) {
             reportBtn->setEnabled(true);
             reportBtn->setStyleSheet(reportStyle);
         } }
+    displayActiveUsers();
+    displayReceivedMessage();
 }
 
 // stylinig for ative user labels (every other labels gets different color)

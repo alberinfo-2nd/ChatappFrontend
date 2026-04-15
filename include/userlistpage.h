@@ -7,6 +7,7 @@
 
 class ActiveUsersManager;
 class SessionManager;
+class BackendClient;
 
 namespace Ui {
 class UserListPage;
@@ -17,7 +18,7 @@ class UserListPage : public QWidget
     Q_OBJECT
 
 public:
-    explicit UserListPage(QWidget *parent = nullptr, SessionManager *sessionManager = nullptr, ActiveUsersManager *activeUsersManager = nullptr);
+    explicit UserListPage(QWidget *parent = nullptr, SessionManager *sessionManager = nullptr, ActiveUsersManager *activeUsersManager = nullptr, BackendClient *backendClient = nullptr);
     ~UserListPage();
     // Functions
     void removeActiveUser(const QString &username);
@@ -38,6 +39,7 @@ private:
     QHash<QString, QWidget*> activeUserLabels;
     SessionManager *m_sessionManager; // pointer to sessionManager
     ActiveUsersManager *m_activeUsersManager; // pointer to activeUsersManager
+    BackendClient *m_backendClient;
 
 };
 

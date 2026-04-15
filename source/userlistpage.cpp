@@ -5,12 +5,14 @@
 #include <QPushButton>
 #include <SessionManager.h>
 #include <ActiveUsersManager.h>
+#include <BackendClient.h>
 
-UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersManager *activeUsersManager)
+UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersManager *activeUsersManager, BackendClient *backendClient)
     : QWidget(parent)
     , ui(new Ui::UserListPage)
     , m_sessionManager{sessionManager}
     , m_activeUsersManager{activeUsersManager}
+    , m_backendClient{backendClient}
 
 {
     ui->setupUi(this);
@@ -63,6 +65,7 @@ UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, Acti
 )");
     // connect signal from active users manager to display active users everytime the list is updated
     connect(m_activeUsersManager, &ActiveUsersManager::activeUsersUpdated, this, &UserListPage::displayActiveUsers);
+    connect(m_sessionManager, &SessionManager::inboxUpdated, this, &UserListPage::displayActiveUsers);
 }
 
 UserListPage::~UserListPage()
@@ -73,13 +76,25 @@ UserListPage::~UserListPage()
 // Function to Display List
 // Updated to allow auto updates of active user list
 void UserListPage::displayActiveUsers() {
-     qDebug() << "Updating UI. Manager says these users are online:" << m_activeUsersManager->getActiveUsers().size();
+    qDebug() << "Updating UI. Manager says these users are online:"
+             << m_activeUsersManager->getActiveUsers().size();
+    qDebug() << "Is admin:" << m_sessionManager->getIsAdmin();
+
     if (m_sessionManager->getUsername().isEmpty()) {
         return;
     }
 
-    QSet<QString> currentUsers;
-    for(const auto& user : m_activeUsersManager->getActiveUsers()){
+    QLayoutItem* item;
+    while ((item = ui->verticalLayout_3->takeAt(0)) != nullptr) {
+        if (item->widget()) {
+            item->widget()->deleteLater();
+        }
+        delete item;
+    }
+
+    activeUserLabels.clear();
+
+    for (const auto& user : m_activeUsersManager->getActiveUsers()) {
         QString username = user.getUsername();
         QString public_key = user.getPublicKey();
 
@@ -87,42 +102,81 @@ void UserListPage::displayActiveUsers() {
             continue;
         }
 
-        currentUsers.insert(username);
-
-        if(!(activeUserLabels.contains(username))) {
-            addUserToList(username, public_key);
-        }
-    }
-// changed
-    QStringList usersToRemove;
-    for (auto it = activeUserLabels.begin(); it != activeUserLabels.end(); ++it) {
-        if(!currentUsers.contains(it.key())) {
-            usersToRemove.append(it.key());
-        }
-    }
-    for (const QString& name : usersToRemove) {
-        removeActiveUser(name);
+        addUserToList(username, public_key);
     }
 }
 
 // Funtion to Add User
-void UserListPage::addUserToList(const QString &username, const QString &public_key){    
-    QPushButton* userBtn = new QPushButton(username, ui->LeftScrollWidget);
+void UserListPage::addUserToList(const QString &username, const QString &public_key){
+    auto& inbox = m_sessionManager->getInbox();
+    QWidget* rowWidget = new QWidget(ui->LeftScrollWidget);
+    rowWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    rowWidget->setLayoutDirection(Qt::LeftToRight);
+
+    QHBoxLayout* rowLayout = new QHBoxLayout(rowWidget);
+    rowLayout->setDirection(QBoxLayout::LeftToRight);
+    rowLayout->setContentsMargins(0, 0, 0, 0);
+    rowLayout->setSpacing(8);
+
+    QPushButton* userBtn = new QPushButton(username, rowWidget);
+    QPushButton* kickBtn = new QPushButton("Kick", rowWidget);
+
     userBtn->setCursor(Qt::PointingHandCursor);
+
+    userBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    kickBtn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+    rowLayout->setStretchFactor(userBtn, 3);
+    rowLayout->setStretchFactor(kickBtn, 1);
     userBtn->setStyleSheet(R"(
         QPushButton {
             background-color: white;
         }
-        QPushButton::hover {
+        QPushButton:hover {
             background-color: #d9d9d9;
         }
     )");
+    kickBtn->setStyleSheet(R"(
+        QPushButton {
+            background-color: white;
+        }
+        QPushButton:hover {
+            background-color: #d9d9d9;
+        }
+    )");
+
+    int numberOfMessages{0};
+    for (size_t i{1}; i <= inbox.size(); ++i) {
+        const QString sender = inbox.at(i - 1).getSender();
+        if (sender == username) {
+            numberOfMessages++;
+        }
+    }
+
+    if (numberOfMessages != 0) {
+        userBtn->setText(username + "   [" + QString::number(numberOfMessages) + "]");
+    }
+
+
+
+    rowLayout->addWidget(userBtn);
+    rowLayout->addWidget(kickBtn);
+    kickBtn->hide();
+
+    if (m_sessionManager->getIsAdmin()) {
+        kickBtn->show();
+        connect(kickBtn, &QPushButton::clicked, this, [this, username]() {
+            m_backendClient->kick(username.toStdString());
+        });
+
+    }
+
     // Button to click user
     connect(userBtn, &QPushButton::clicked, this, [this, username, public_key]() {
         emit chatRequested(username, public_key);
     });
-    ui-> verticalLayout_3->insertWidget(0,userBtn);
-    activeUserLabels.insert(username, userBtn);
+    ui-> verticalLayout_3->insertWidget(0, rowWidget);
+    activeUserLabels.insert(username, rowWidget);
 }
 
 // Funtion to Remove Users (copied from chat branch)
@@ -139,9 +193,6 @@ void UserListPage::removeActiveUser(const QString &username) {
 
 // Function for Exit Button
 void UserListPage::on_pushButton_clicked() {
-    // Clear Session Data ??
-    m_activeUsersManager->clearActiveUsers();
-    m_sessionManager->clear();
     emit logoutRequested();
 }
 
