@@ -48,11 +48,64 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
     bubbleLayout->addWidget(chatPartnerLabel);
 
     headerLayout->addWidget(bubble);
+
+    // Report button
+    reportBtn = new QPushButton("Report", ui->chatHeader);
+    reportBtn->setFixedSize(80,35);
+    reportBtn->setCursor(Qt::PointingHandCursor);
+
+    reportBtn->setStyleSheet(R"(
+        QPushButton {
+            background-color: #bacba8;
+            color: black;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #95a681;
+        }
+        QPushButton:pressed {
+            background-color: #7a8a68;
+        }
+        QPushButton:disabled {
+            background-color: #d1d9c7; /* Color for when it says 'Reported' */
+        }
+    )");
+
+    headerLayout->addWidget(reportBtn);
+
+    // connect to backend
+    connect(reportBtn, &QPushButton::clicked, this,[this](){
+        QString partnerName = m_currentPartner.getUsername();
+        if(!partnerName.isEmpty()){
+            m_backendClient->reportUser(partnerName.toStdString());
+            m_reportedUsers.insert(partnerName.toStdString());
+            // Visual
+            QPushButton* btn = qobject_cast<QPushButton*>(sender());
+            btn->setText("Reported");
+            btn->setEnabled(false);
+        }
+    });
+
     headerLayout->addStretch();
 
-    // make exit button show up
+    // Exit button style
     ui->pushButton->setFixedSize(80, 35);
-    ui->pushButton->setStyleSheet("background-color: #bacba8; color: black; font-weight: bold;");
+    ui->pushButton->setCursor(Qt::PointingHandCursor);
+
+    ui->pushButton->setStyleSheet(R"(
+        QPushButton {
+            background-color: #bacba8;
+            color: black;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #95a681;
+        }
+        QPushButton:pressed {
+            background-color: #7a8a68;
+        }
+    )");
+
     headerLayout->addWidget(ui->pushButton);
 
     // connect send message button to slot function send message
@@ -60,6 +113,7 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
 
     // set place holder text for line edit in chat footer
     ui->messageLineEdit->setPlaceholderText("Send message...");
+    ui->sendMessageButton->setCursor(Qt::PointingHandCursor);
 
     // style sheet for chat page
     this->setStyleSheet(R"(
@@ -91,6 +145,10 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
         background-color: white;
         color: black;
         font-weight: bold;
+        }
+
+        #sendMessageButton:hover {
+        background-color: #d9d9d9;
         }
 
         #userListScrollAreaContent QLabel {
@@ -184,7 +242,26 @@ void ChatPage::displayActiveUsers() {
 
        // button for the list of users
        QPushButton* userBtn = new QPushButton(username, rowWidget);
-       userBtn->setStyleSheet("background: white; color: black; font-size: 16pt;");
+       userBtn->setObjectName("userListButton");
+
+       // putting styleSheet here to force it
+       userBtn->setStyleSheet(R"(
+        QPushButton#userListButton {
+            background-color: white;
+            color: black;
+            font-size: 16pt;
+            border-radius: 5px;
+        }
+        QPushButton#userListButton:hover {
+            background-color: #d9d9d9;
+        }
+        QPushButton#userListButton:pressed {
+            background-color: #cccccc;
+        }
+        )");
+       userBtn->setCursor(Qt::PointingHandCursor); // cursor into hand
+
+       //userBtn->setStyleSheet("background: white; color: black; font-size: 16pt;");
        userBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
        rowLayout->addWidget(userBtn);
@@ -249,6 +326,36 @@ void ChatPage::switchToNewChat(const QString &username) {
     chatScrollAreaLayout->addStretch();
     m_currentPartner.setUsername(username);
     chatPartnerLabel->setText(username);
+
+    // Reset report button for new user
+    if(reportBtn){
+        QString reportStyle =(R"(
+        QPushButton {
+            background-color: #bacba8;
+            color: black;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #95a681;
+        }
+        QPushButton:pressed {
+            background-color: #7a8a68;
+        }
+        QPushButton:disabled {
+            background-color: #d1d9c7; /* Color for when it says 'Reported' */
+        }
+    )");
+        // check if reported user is in list
+        if(m_reportedUsers.count(username.toStdString())){
+            reportBtn->setText("Reported");
+            reportBtn->setEnabled(false);
+            reportBtn->setStyleSheet(reportStyle);
+        } else {
+        // keep regular button layout
+            reportBtn->setText("Report");
+            reportBtn->setEnabled(true);
+            reportBtn->setStyleSheet(reportStyle);
+        } }
 }
 
 // stylinig for ative user labels (every other labels gets different color)

@@ -14,6 +14,7 @@ UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, Acti
 
 {
     ui->setupUi(this);
+    ui->pushButton->setCursor(Qt::PointingHandCursor);
     ui->LeftScrollArea->setWidget(ui->LeftScrollWidget);
     ui->LeftScrollArea->setWidgetResizable(true);
     ui->LeftScrollWidget->setLayout(ui->verticalLayout_3);
@@ -105,8 +106,9 @@ void UserListPage::displayActiveUsers() {
 }
 
 // Funtion to Add User
-void UserListPage::addUserToList(const QString &username, const QString &public_key){
+void UserListPage::addUserToList(const QString &username, const QString &public_key){    
     QPushButton* userBtn = new QPushButton(username, ui->LeftScrollWidget);
+    userBtn->setCursor(Qt::PointingHandCursor);
     userBtn->setStyleSheet(R"(
         QPushButton {
             background-color: white;

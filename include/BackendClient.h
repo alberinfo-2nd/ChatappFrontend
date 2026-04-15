@@ -44,6 +44,9 @@ public:
 
     void requestMessages();
 
+    // used for the reported users
+    void reportUser(const std::string &reportedUser);
+
 signals:
     // signal used to send activeUserManager the newly updated list of atcive users
     void activeUsersReceived(const std::vector<User> &users);

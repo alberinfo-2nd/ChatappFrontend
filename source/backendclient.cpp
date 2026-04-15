@@ -172,7 +172,37 @@ void BackendClient::sendMessage(const std::string &recipient, const std::string 
     }
 }
 
-void BackendClient::requestMessages() {
+// Report user
+void BackendClient::reportUser(const std::string &reportedUser){
+    if(m_sessionManager->getUsername().isEmpty()) return;
+    nlohmann::json request_body = {
+        {"username", m_sessionManager->getUsername().toStdString()},
+        {"reportedUser", reportedUser}
+};
+    httplib::Request req;
+    req.method = "POST";
+    req.path = "/report";
+    req.body = request_body.dump();
+    req.headers = {
+        {"Content-Type", "application/json"},
+        {"authorizationToken", m_sessionManager->getAuthorizationToken().toStdString()}
+};
+    auto result = m_client.send(req);
+    if (!result){
+        std::cerr<<"Could not reach server"<<std::endl;
+        return;
+    }
+        if (!result->body.empty()) {
+            try {
+                auto json_res = nlohmann::json::parse(result->body);
+            } catch (const nlohmann::json::parse_error& e) {
+                std::cerr << "JSON Parse Error: " << e.what() << std::endl;
+            }
+        } else {
+            std::clog << "Server returned an empty body with status: " << result->status << std::endl; }
+    }
+
+    void BackendClient::requestMessages() {
     if (m_sessionManager->getUsername().isEmpty() ||
         m_sessionManager->getAuthorizationToken().isEmpty()) {
         return;

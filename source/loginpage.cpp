@@ -27,6 +27,7 @@ LoginPage::LoginPage(QWidget *parent, BackendClient *backendClient)
 
     // make link styled admin button hand cursor on hover
     ui->adminButton->setCursor(Qt::PointingHandCursor);
+    ui->loginButton->setCursor(Qt::PointingHandCursor);
 
     // set background stlying attribute for login page;
     this->setAttribute(Qt::WA_StyledBackground, true);

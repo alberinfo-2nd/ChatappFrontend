@@ -8,6 +8,8 @@
 #include "sessionManager.h"
 #include "BackendClient.h"
 #include "user.h"
+#include <QPushButton>
+#include <set>
 
 class QVBoxLayout;
 class QLabel;
@@ -48,6 +50,8 @@ private:
     BackendClient *m_backendClient;
     User m_currentPartner;
     QLabel* chatPartnerLabel;
+    QPushButton* reportBtn;
+    std::set<std::string> m_reportedUsers; // reported usernames holder
 
     //helper functions
     QLabel* createNewMessageLabel(const QString &message);
