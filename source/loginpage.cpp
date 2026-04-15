@@ -136,7 +136,6 @@ void LoginPage::toggleLoginMode() {
 }
 
 // slot function for handling login requests (emits loginSuccessful signal)
-// TODO update function for handling admin logins
 void LoginPage::handleLogin() {
     const bool isAdmin{m_mode == LoginMode::Admin};
     const QString username{ui->usernameLineEdit->text().trimmed()};

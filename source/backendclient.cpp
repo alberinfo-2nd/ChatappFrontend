@@ -10,7 +10,7 @@
 // constructor most important added attribute is the pointer to the sessionManager
 BackendClient::BackendClient(QObject *parent, SessionManager *sessionManager)
     : QObject(parent)
-    , m_client("10.100.150.71", 8080)
+    , m_client("10.100.130.195", 8080)
     , m_activeUsersTimer(new QTimer(this))
     , m_messagesTimer(new QTimer(this))
     , m_sessionManager{sessionManager}
@@ -109,7 +109,11 @@ void BackendClient::requestActiveUsers() {
     auto json_result = nlohmann::json::parse(result->body);
     if (result->status != 200) {
         std::cerr << "Request failed with status " << result->status << ": " << result->body << std::endl;
-        if(json_result["message"] == "Invalid authorization token or username")     emit userKicked(true);
+
+        if(json_result["message"] == "Invalid authorization token or username") {
+            emit userKicked(true);
+        }
+
         return;
     }
 
@@ -138,7 +142,7 @@ void BackendClient::startPolling() {
     });
 }
 
-// stop active user polling (stop timer)
+// stop polling (stop timer)
 void BackendClient::stopPolling() {
     m_activeUsersTimer->stop();
     m_messagesTimer->stop();

@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
     // set Login Page as the default page to display
     ui->stackedWidget->setCurrentWidget(loginPage);
 
-    // connects signal from login page (loginSuccesful) to slot function (showUserListPage) which changes the current displayed
+    // Lamda function for for handling logging out or being kicked
     auto handleLogout = [this](bool kicked = false){
         qDebug()<<"User has logged out. Session Cleared";
         backendClient->logout(sessionManager->getUsername().toStdString(), sessionManager->getAuthorizationToken().toStdString());
@@ -98,7 +98,6 @@ void MainWindow::handleSuccessfulLogin(const QString &username, const QString &p
 }
 
 //used to handle chat requests
-//TODO no impementation add yet
 void MainWindow::handleChatRequest(const QString &username, const QString &public_key) {
     User partner(username, public_key);
 

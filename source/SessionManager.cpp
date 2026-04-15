@@ -9,6 +9,7 @@ SessionManager::SessionManager(QObject *parent)
 {
 }
 
+// set current logged in user's data/info
 void SessionManager::setCurrentUser(const QString &username, const QString &public_key, const QString &authoirizationToken) {
     m_currentUser.setUsername(username);
     m_currentUser.setPublicKey(public_key);
@@ -23,8 +24,7 @@ void SessionManager::clear() {
     m_isAdmin = false;
 }
 
-// set to admin
-//TODO currently not used in anything
+// set as admin
 void SessionManager::setAsAdmin() {
     m_isAdmin = true;
 }
@@ -44,10 +44,12 @@ QString SessionManager::getAuthorizationToken() {
     return m_authorizationToken;
 }
 
+// get is logged in user an admin (returns true or false)
 bool SessionManager::getIsAdmin() {
     return m_isAdmin;
 }
 
+// add messages to logged in user's inbox
 void SessionManager::addMessages(const std::vector<Message> &messages) {
     for (const auto &message : messages)
         m_inbox.push_back(message);
@@ -55,6 +57,7 @@ void SessionManager::addMessages(const std::vector<Message> &messages) {
     inboxUpdated();
 }
 
+// remove message from logged in user's inbox
 void SessionManager::removeMessage(size_t &index) {
     if (m_inbox.empty()) {
         return;
@@ -62,6 +65,7 @@ void SessionManager::removeMessage(size_t &index) {
     m_inbox.erase(m_inbox.begin() + index);
 }
 
+// get logged in user's inbox
 const std::vector<Message>& SessionManager::getInbox() const{
     return m_inbox;
 }

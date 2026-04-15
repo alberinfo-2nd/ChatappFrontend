@@ -4,8 +4,8 @@
 #include <QString>
 
 /****************************************
-This will later be changed to a class
-until then this works
+User class for basic user, holds their
+username and public key.
 *****************************************/
 
 class User {

@@ -94,15 +94,41 @@ void UserListPage::displayActiveUsers() {
 
     activeUserLabels.clear();
 
+    QString myName = m_sessionManager->getUsername();
+    auto& inbox = m_sessionManager->getInbox();
+
+    // username -> public_key
+    QHash<QString, QString> usersToDisplay;
+
+    // 1. Add normal active users
     for (const auto& user : m_activeUsersManager->getActiveUsers()) {
         QString username = user.getUsername();
         QString public_key = user.getPublicKey();
 
-        if (username == m_sessionManager->getUsername()) {
+        if (username == myName) {
             continue;
         }
 
-        addUserToList(username, public_key);
+        usersToDisplay.insert(username, public_key);
+    }
+
+    // 2. Add inbox senders (ex: admin who messaged user)
+    for (const auto& message : inbox) {
+        QString sender = message.getSender();
+
+        if (sender == myName) {
+            continue;
+        }
+
+        // Only add if not already present from active users
+        if (!usersToDisplay.contains(sender)) {
+            usersToDisplay.insert(sender, "");
+        }
+    }
+
+    // 3. Build UI
+    for (auto it = usersToDisplay.begin(); it != usersToDisplay.end(); ++it) {
+        addUserToList(it.key(), it.value());
     }
 }
 
