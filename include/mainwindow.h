@@ -27,17 +27,19 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
 
-// slots used for showing each page
 private slots:
+    // Controls which page is currently visible in the stacked widget
     void showLoginPage();
     void showUserListPage();
     void showChatPage();
+    // Logic Handlers
     void handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken, const bool &isAdmin);
     void handleChatRequest(const QString &username, const QString &publick_key);
 
 // Declaring Member attributes
 private:
     Ui::MainWindow *ui;
+    // Core Managers
     SessionManager *sessionManager;
     ActiveUsersManager *activeUsersManager;
     BackendClient *backendClient;
@@ -46,6 +48,5 @@ private:
     LoginPage *loginPage;
     UserListPage *userListPage;
     ChatPage *chatPage;
-    ChatPage *currentChatPage = nullptr;
 };
 #endif // MAINWINDOW_H

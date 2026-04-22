@@ -6,7 +6,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 
-// constructor
+// Constructor
 ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersManager *activeUsersManager, BackendClient *backendClient, User partner)
     : QWidget(parent)
     , ui(new Ui::ChatPage)
@@ -14,48 +14,47 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
     , m_activeUsersManager{activeUsersManager}
     , m_backendClient{backendClient}
     , m_currentPartner{partner}
-// constructor body
+
+// Constructor body
 {
     ui->setupUi(this);
 
-    // add vertical layouts for chat and user list area, used
-    // to layout dynamically added widgets vertically
+    // Initialize layouts for the dynamic scroll areas
     chatScrollAreaLayout= new QVBoxLayout(ui->chatScrollAreaContent);
     userListScrollAreaLayout= new QVBoxLayout(ui->userListScrollAreaContent);
 
-    // layout
+    // Sidebar configuration to align users at the top
     userListScrollAreaLayout->setAlignment(Qt::AlignTop);
     userListScrollAreaLayout->setContentsMargins(0, 0, 0, 0);
     userListScrollAreaLayout->setSpacing(2);
+
     ui->frame_2->setMinimumWidth(160);
     ui->userListScrollAreaContent->setStyleSheet("background-color: #3e405a;");
     ui->userListScrollArea->setWidgetResizable(true);
 
-    // attribute allows page to have its own background color
-    this->setAttribute(Qt::WA_StyledBackground, true); // fix background problem
+    // Attribute allows page to have its own background color
+    this->setAttribute(Qt::WA_StyledBackground, true);
 
-    // Layout for header
+    // Header: Creates the top bar containing partner name and actions
      ui->chatHeader->setMinimumHeight(60);
      ui->chatHeader->setStyleSheet("background-color: #54566a;");
-
-    // Horizontal layout for chat header
     QHBoxLayout* headerLayout = new QHBoxLayout(ui->chatHeader);
 
-    // Bubble for chatPartnerLabel
+    // Visual: Create a white Bubble for the current chat partner's name
     QFrame* bubble = new QFrame(ui->chatHeader);
-    bubble->setStyleSheet("background-color: white;" "border-radius: 20px;" "padding: 2px 20px;");
+    bubble->setStyleSheet("background-color: white;" "border-radius: 8px;" "padding: 2px 20px;");
     QHBoxLayout* bubbleLayout = new QHBoxLayout(bubble);
 
     chatPartnerLabel = new QLabel(m_currentPartner.getUsername(), bubble);
     chatPartnerLabel->setStyleSheet("color: black; font-size: 18pt; font-weight: bold;");
     bubbleLayout->addWidget(chatPartnerLabel);
 
-    // add chat partner's label to header layout
+    // Add chat partner's label to header layout
     headerLayout->addWidget(bubble);
 
-    // Report button
+    // Report Button Setup
     reportBtn = new QPushButton("Report", ui->chatHeader);
-    reportBtn->setFixedSize(80,35);
+    reportBtn->setFixedSize(80,40);
     reportBtn->setCursor(Qt::PointingHandCursor);
 
     reportBtn->setStyleSheet(R"(
@@ -75,15 +74,14 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
         }
     )");
 
-    // add report button to header layout
     headerLayout->addWidget(reportBtn);
 
-    // connect to backend
+    // Notify backend and visually disable the button
     connect(reportBtn, &QPushButton::clicked, this,[this](){
         QString partnerName = m_currentPartner.getUsername();
         if(!partnerName.isEmpty()){
             m_backendClient->reportUser(partnerName.toStdString());
-            m_reportedUsers.insert(partnerName.toStdString());
+            m_sessionManager->reportUser(partnerName);
             // Visual
             QPushButton* btn = qobject_cast<QPushButton*>(sender());
             btn->setText("Reported");
@@ -91,11 +89,11 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
         }
     });
 
-    // add spacer to header layout user to push partner label and report to the left
+    // Spacer to header layout user to push partner label and report to the left
     headerLayout->addStretch();
 
-    // Exit button style
-    ui->pushButton->setFixedSize(80, 35);
+    // Exit Button Setup
+    ui->pushButton->setFixedSize(120, 40);
     ui->pushButton->setCursor(Qt::PointingHandCursor);
 
     ui->pushButton->setStyleSheet(R"(
@@ -112,17 +110,16 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
         }
     )");
 
-    // add exit button to header layout
     headerLayout->addWidget(ui->pushButton);
 
-    // connect send message button to slot function send message
+    // Handle sending messages
     connect(ui->sendMessageButton, &QPushButton::clicked, this, &ChatPage::sendMessage);
 
-    // set place holder text for line edit in chat footer
+    // Message Input Styling
     ui->messageLineEdit->setPlaceholderText("Send message...");
     ui->sendMessageButton->setCursor(Qt::PointingHandCursor);
 
-    // style sheet for chat page
+    // Global styling for chat frames and scroll area labels
     this->setStyleSheet(R"(
         QWidget#ChatPage {
         background-color: #2a2c47;
@@ -165,45 +162,42 @@ ChatPage::ChatPage(QWidget *parent, SessionManager *sessionManager, ActiveUsersM
     )");
 
 
-// exit button
+// Connect back to user list
     connect(ui->pushButton, &QPushButton::clicked, this, [this]() {
         clearDisplayedMessages();
         emit backToUserListRequested();
     });
 
-    // first call for displaying active users
+    // Refresh UI on user list or inbox updates
     displayActiveUsers();
-
-    // connect signal from active users manager to display active users everytime the list is updated
     connect(m_activeUsersManager, &ActiveUsersManager::activeUsersUpdated, this, &ChatPage::displayActiveUsers);
     connect(m_sessionManager, &SessionManager::inboxUpdated, this, &ChatPage::displayReceivedMessage);
-
-    // also update the active user's list to display new notifications
     connect(m_sessionManager, &SessionManager::inboxUpdated, this, &ChatPage::displayActiveUsers);
+    connect(m_sessionManager, &SessionManager::chatSessionChanged, this, &ChatPage::updateChatDisplay);
 
 }
 
 
-// destructor
+// Destructor
 ChatPage::~ChatPage()
 {
     delete ui;
 }
 
-// set chat partners username
+// Set chat partners username
 void ChatPage::setChatPartner(QString username) {
     m_currentPartner.setUsername(username);
 }
 
 // Message Display Logic
-// creates a new label for a message
+// Helper to create consistent message bubbles
 QLabel* ChatPage::createNewMessageLabel(const QString &message) {
     QLabel* messageLabel = new QLabel(message, ui->chatScrollAreaContent);
     messageLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     return messageLabel;
 }
 
-// displays recieved message (different color, align left)
+// Processes  inbox and displays messages from the current partner (Aligned Left)
 void ChatPage::displayReceivedMessage() {
     auto& inbox = m_sessionManager->getInbox();
     for (size_t i{0}; i < inbox.size(); ) {
@@ -213,13 +207,14 @@ void ChatPage::displayReceivedMessage() {
             chatScrollAreaLayout->setAlignment(messageLabel, Qt::AlignLeft);
             chatScrollAreaLayout->addWidget(messageLabel);
             messageLabel->setStyleSheet("background-color: #7f906c; color:white; border-radius: 12px; padding: 8px 15px;");
-            m_sessionManager->removeMessage(i);
+            m_sessionManager->removeMessage(i); // Clear message from session once displayed
         } else {
             ++i;
         }
     }
 }
-// dsiplays sent message (different color, align right)
+
+// Displays the user's own sent messages (Aligned Right)
 void ChatPage::displaySentMessage(const QString &message) {
     QLabel* messageLabel = createNewMessageLabel(message);
     chatScrollAreaLayout->addWidget(messageLabel);
@@ -227,7 +222,7 @@ void ChatPage::displaySentMessage(const QString &message) {
     messageLabel->setStyleSheet("background-color: #abbc99; color:white; border-radius: 12px; padding: 8px 15px;");
 }
 
-// slot function for sending message
+// Slot function for sending message
 void ChatPage::sendMessage() {
     const QString message = ui->messageLineEdit->text();
     ui->messageLineEdit->clear();
@@ -237,15 +232,15 @@ void ChatPage::sendMessage() {
     }
 }
 
-// UserList Logic
-// used to display a label for each active user
+// Sidebar/UserList Logic
+// Updates the sidebar with online users and message notifications
 void ChatPage::displayActiveUsers() {
     clearActiveUserList();
     QString myName = m_sessionManager->getUsername();
     auto& inbox = m_sessionManager->getInbox();
 
     QSet<QString> usersToDisplay;
-
+    // Filter out self and current partner from the sidebar
     for (const auto& user : m_activeUsersManager->getActiveUsers()) {
         QString username = user.getUsername();
 
@@ -266,18 +261,16 @@ void ChatPage::displayActiveUsers() {
 
     for (const QString& username : usersToDisplay) {
 
-       // Row container (replaces old userLabel)
        QWidget* rowWidget = new QWidget(ui->userListScrollAreaContent);
        rowWidget->setMinimumSize(120, 50);
        rowWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
        QHBoxLayout* rowLayout = new QHBoxLayout(rowWidget);
 
-       // button for the list of users
        QPushButton* userBtn = new QPushButton(username, rowWidget);
        userBtn->setObjectName("userListButton");
 
-       // putting styleSheet here to force it
+       // Styling for sidebar buttons
        userBtn->setStyleSheet(R"(
         QPushButton#userListButton {
             background-color: white;
@@ -292,14 +285,16 @@ void ChatPage::displayActiveUsers() {
             background-color: #cccccc;
         }
         )");
-       userBtn->setCursor(Qt::PointingHandCursor); // cursor into hand
+
+       userBtn->setCursor(Qt::PointingHandCursor);
 
        userBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
        QPushButton* kickBtn = new QPushButton("Kick", rowWidget);
-
+       kickBtn->setCursor(Qt::PointingHandCursor);
        kickBtn->setStyleSheet("background: white; color: black; font-size: 16pt;");
        kickBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
+       // Check for unread messages to display a notification count
        int numberOfMessages{0};
        for (size_t i{1}; i <= inbox.size(); ++i) {
            const QString sender = inbox.at(i - 1).getSender();
@@ -318,6 +313,7 @@ void ChatPage::displayActiveUsers() {
        rowLayout->setStretchFactor(userBtn, 4);
        rowLayout->setStretchFactor(kickBtn, 1);
 
+       // Admin check for Kick privileges
        kickBtn->hide();
        if (m_sessionManager->getIsAdmin()) {
            kickBtn->show();
@@ -327,9 +323,9 @@ void ChatPage::displayActiveUsers() {
 
        }
 
-       // connect button to switch to another user
+       // Switches the main chat view to the selected user
         connect(userBtn, &QPushButton::clicked, this, [this, username]() {
-             switchToNewChat(username);
+            m_sessionManager->switchToNewChat(username);
         });
 
         userListScrollAreaLayout->addWidget(rowWidget);
@@ -342,13 +338,12 @@ void ChatPage::displayActiveUsers() {
 
 }
 
-// used to delete label assiociated to an active user
+// Delete label assiociated to an active user
 void ChatPage::removeActiveUser(const QString &username) {
     auto iterator = activeUserLabels.find(username);
     if (iterator == activeUserLabels.end()) {
         return;
     }    
-// changed to handle row instead of old code
     QWidget* rowWidget = iterator.value();
     rowWidget->deleteLater();
     activeUserLabels.erase(iterator);
@@ -356,7 +351,7 @@ void ChatPage::removeActiveUser(const QString &username) {
     alternateLabelStyle();
 }
 
-// clear user box
+// Clear user box
 void ChatPage::clearActiveUserList() {
     QLayoutItem* item;
     while ((item = userListScrollAreaLayout->takeAt(0)) != nullptr) {
@@ -369,7 +364,7 @@ void ChatPage::clearActiveUserList() {
     activeUserLabels.clear();
 }
 
-// clear chat box
+// Clear chat box
 void ChatPage::clearDisplayedMessages() {
     QLayoutItem* item;
     while ((item = chatScrollAreaLayout->takeAt(0)) != nullptr) {
@@ -380,47 +375,32 @@ void ChatPage::clearDisplayedMessages() {
     }
 }
 
-// switch to new chat
-void ChatPage::switchToNewChat(const QString &username) {
+// Transitions the page to a conversation with a different user
+void ChatPage::updateChatDisplay(const QString &username, bool isReported) {
     clearDisplayedMessages();
     chatScrollAreaLayout->addStretch();
     m_currentPartner.setUsername(username);
     chatPartnerLabel->setText(username);
 
-    // Reset report button for new user
+    // Reset report button state for the new partner
     if(reportBtn){
-        QString reportStyle =(R"(
-        QPushButton {
-            background-color: #bacba8;
-            color: black;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background-color: #95a681;
-        }
-        QPushButton:pressed {
-            background-color: #7a8a68;
-        }
-        QPushButton:disabled {
-            background-color: #d1d9c7; /* Color for when it says 'Reported' */
-        }
-    )");
-        // check if reported user is in list
-        if(m_reportedUsers.count(username.toStdString())){
+        QString style = reportBtn->styleSheet(); // Reuse existing style
+        // Check if reported user is in list
+        if(isReported){
             reportBtn->setText("Reported");
             reportBtn->setEnabled(false);
-            reportBtn->setStyleSheet(reportStyle);
         } else {
-        // keep regular button layout
+        // Keep regular button layout
             reportBtn->setText("Report");
             reportBtn->setEnabled(true);
-            reportBtn->setStyleSheet(reportStyle);
         } }
+
     displayActiveUsers();
     displayReceivedMessage();
 }
 
-// stylinig for ative user labels (every other labels gets different color)
+
+// Stylinig for ative user labels (every other labels gets different color)
  void ChatPage::alternateLabelStyle() {
     for (int i{0}; i < userListScrollAreaLayout->count(); ++i) {
         QLayoutItem* item = userListScrollAreaLayout->itemAt(i);
@@ -428,7 +408,6 @@ void ChatPage::switchToNewChat(const QString &username) {
             continue;
         }
 
-    // changed to include QWidget
     QWidget* rowWidget = item->widget();
         if (i % 2 == 0) {
             rowWidget->setStyleSheet(R"(

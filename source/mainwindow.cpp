@@ -17,36 +17,49 @@ MainWindow::MainWindow(QWidget *parent)
     , backendClient(new BackendClient(this, sessionManager))
     , loginPage(new LoginPage(this, backendClient))
     , userListPage(new UserListPage(this, sessionManager, activeUsersManager, backendClient))
-    , chatPage(nullptr)
-
+    , chatPage(new ChatPage(this, sessionManager, activeUsersManager, backendClient, User("", "")))
 {
+
     ui->setupUi(this);
 
-    // add each QWidget object(page) to stackedWidget
+    // Add each QWidget object(page) to stackedWidget
     ui->stackedWidget->addWidget(loginPage);
     ui->stackedWidget->addWidget(userListPage);
+    ui->stackedWidget->addWidget(chatPage);
 
-    // set Login Page as the default page to display
+    // Set Login Page as the default page to display
     ui->stackedWidget->setCurrentWidget(loginPage);
 
     // Lamda function for for handling logging out or being kicked
     auto handleLogout = [this](bool kicked = false){
         qDebug()<<"User has logged out. Session Cleared";
-        backendClient->logout(sessionManager->getUsername().toStdString(), sessionManager->getAuthorizationToken().toStdString());
-        sessionManager->clear();
+        // Get Data
+        std::string user = sessionManager->getUsername().toStdString();
+        std::string token = sessionManager->getAuthorizationToken().toStdString();
+
+        if (!token.empty()) {
+            backendClient->logout(user, token);
+        }
+
         backendClient->stopPolling();
+        sessionManager->clear();
+        activeUsersManager->clearActiveUsers();
         showLoginPage();
+
         if (kicked) {
             QMessageBox::warning(this, "Warning", "You have been kicked by an admin!");
         }
     };
+    // Global Signal/Slot Connections
     connect(loginPage, &LoginPage::loginSuccessful, this, &MainWindow::handleSuccessfulLogin);
     connect(userListPage, &UserListPage::chatRequested, this, &MainWindow::handleChatRequest);
     connect(userListPage, &UserListPage::logoutRequested, this, handleLogout);
+    connect(chatPage, &ChatPage::backToUserListRequested, this, &MainWindow::showUserListPage);
+    // Backend synchronization
     connect(backendClient, &BackendClient::userKicked, this, handleLogout);
     connect(backendClient, &BackendClient::activeUsersReceived, activeUsersManager, &ActiveUsersManager::setActiveUsers);
     connect(backendClient, &BackendClient::messageReceived, sessionManager, &SessionManager::addMessages);
-    // runs destructor when window is closed
+    // Runs destructor when window is closed
     this->setAttribute(Qt::WA_DeleteOnClose);
 }
 
@@ -58,7 +71,6 @@ MainWindow::~MainWindow()
     delete sessionManager;
     delete activeUsersManager;
     delete backendClient;
-
 }
 
 // MainWindow slot function to show Login Page
@@ -77,41 +89,22 @@ void MainWindow::showChatPage() {
     ui->stackedWidget->setCurrentWidget(chatPage);
 }
 
-// used to handle succesful logins
+// Handle succesful logins
 void MainWindow::handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken, const bool &isAdmin) {
     sessionManager->setCurrentUser(username, public_key, authorizationToken);
     if (isAdmin) {
         sessionManager->setAsAdmin();
     }
-    // testing
-    /*
-    std::cout << "Username: " << sessionManager->getUsername().toStdString() << std::endl <<
-        "Public Key: " << sessionManager->getPublicKey().toStdString() << std::endl <<
-        "Auth Token: " << sessionManager->getAuthorizationToken().toStdString() << std::endl;
-    */
 
-    // MOVED STUFF HERE - FIXED EXIT BUTTON
-
-    ui->stackedWidget->setCurrentWidget(userListPage);
+    showUserListPage();
     backendClient->requestActiveUsers();
     backendClient->startPolling();
 }
 
-//used to handle chat requests
+// Used to handle chat requests
+// Updates the session data and switches the UI to the chat screen
 void MainWindow::handleChatRequest(const QString &username, const QString &public_key) {
-    User partner(username, public_key);
-
-
-    if (!chatPage) {
-        chatPage = new ChatPage(ui->stackedWidget, sessionManager, activeUsersManager, backendClient, partner);
-        ui->stackedWidget->addWidget(chatPage);
-
-        connect(chatPage, &ChatPage::backToUserListRequested,
-                this, &MainWindow::showUserListPage);
-    }
-
-    // update chat instead of recreating it
-    chatPage->switchToNewChat(username);
-    ui->stackedWidget->setCurrentWidget(chatPage);
+   sessionManager->switchToNewChat(username);
+    showChatPage();
 
 }

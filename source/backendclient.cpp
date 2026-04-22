@@ -7,7 +7,8 @@
 #include <SessionManager.h>
 
 
-// constructor most important added attribute is the pointer to the sessionManager
+// Constructor: most important added attribute is the pointer to the sessionManager
+// Initializes the client and sets up timers for automatic data polling
 BackendClient::BackendClient(QObject *parent, SessionManager *sessionManager)
     : QObject(parent)
     , m_client("10.100.130.195", 8080)
@@ -15,16 +16,13 @@ BackendClient::BackendClient(QObject *parent, SessionManager *sessionManager)
     , m_messagesTimer(new QTimer(this))
     , m_sessionManager{sessionManager}
 {
-    // connect the timer to the request active users function
+    // Connect timers to trigger background requests for users and messages
     connect(m_activeUsersTimer, &QTimer::timeout, this, &BackendClient::requestActiveUsers);
     connect(m_messagesTimer, &QTimer::timeout, this, &BackendClient::requestMessages);
 }
 
 // POST Request for sending login info return authorization token
-// TODO REWORK THIS FUNCTION TO HANDE ADMINS
-// NEED TO DO LOGOUT
 std::string BackendClient::sendLogin(std::string username, std::string public_key, std::string password) {
-    // body
     nlohmann::json request_body = {
         {"username", username},
         {"public_key", public_key},
@@ -50,6 +48,7 @@ std::string BackendClient::sendLogin(std::string username, std::string public_ke
     return json_result["authorization_token"];
 }
 
+// Notifies the server to terminate the current session
 void BackendClient::logout(std::string username, std::string authorizationToken) {
     nlohmann::json request_body = {
         {"username", username}
@@ -79,9 +78,9 @@ void BackendClient::logout(std::string username, std::string authorizationToken)
     std::clog << "Server response body: " << result->body << std::endl;
 }
 
-// request active users
+// Requests the list of online users from the server
 void BackendClient::requestActiveUsers() {
-    // If we don't have a username, don't ping the server (used for exit button)
+    // Skip request if user isn't logged in (used for exit button)
     if (m_sessionManager->getUsername().isEmpty()||
         m_sessionManager->getAuthorizationToken().isEmpty()) {
         return;
@@ -130,7 +129,7 @@ void BackendClient::requestActiveUsers() {
     return;
 }
 
-// start polling timer for both request messages and request active users(start timer)
+// Start polling timer for both request messages and request active users(start timer)
 void BackendClient::startPolling() {
     m_activeUsersTimer->start(2000);
     m_messagesTimer->start(2000);
@@ -142,12 +141,12 @@ void BackendClient::startPolling() {
     });
 }
 
-// stop polling (stop timer)
+// Stop polling (stop timer)
 void BackendClient::stopPolling() {
     m_activeUsersTimer->stop();
     m_messagesTimer->stop();
 }
-
+// Sends a new chat message to a specific recipient via the backend
 void BackendClient::sendMessage(const std::string &recipient, const std::string &message) {
     nlohmann::json request_body = {
         {"username", m_sessionManager->getUsername().toStdString()},
@@ -175,7 +174,7 @@ void BackendClient::sendMessage(const std::string &recipient, const std::string 
     }
 }
 
-// Report user
+// Sends a report request to the server for a specific user
 void BackendClient::reportUser(const std::string &reportedUser){
     if(m_sessionManager->getUsername().isEmpty()) return;
     nlohmann::json request_body = {
@@ -208,6 +207,7 @@ void BackendClient::reportUser(const std::string &reportedUser){
             std::clog << "Server returned an empty body with status: " << result->status << std::endl; }
 }
 
+// Gets new messages from the server and parses them into Message objects for the UI
 void BackendClient::requestMessages() {
     if (m_sessionManager->getUsername().isEmpty() ||
         m_sessionManager->getAuthorizationToken().isEmpty()) {
@@ -267,6 +267,7 @@ void BackendClient::requestMessages() {
     }
 }
 
+// Admin only: Sends a request to disconnect a specific user from the server
 std::string BackendClient::kick(std::string username) {
     nlohmann::json request_body = {
         {"username", m_sessionManager->getUsername().toStdString()},
@@ -283,7 +284,6 @@ std::string BackendClient::kick(std::string username) {
     };
 
     auto result = m_client.send(req);
-
 
     if (!result) {
         std::cerr << "HTTP request failed\n";

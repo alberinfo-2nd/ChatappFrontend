@@ -1,22 +1,33 @@
 #include "SessionManager.h"
-/*
-Used to manage the currently logged in user that the front end can keep track of the user's pub key, username, and auth token
-TODO add admin implementation
-*/
-// constructor
+// Used to manage the currently logged in user that the front end can keep track of the user's pub key, username, and auth token
+// Constructor
 SessionManager::SessionManager(QObject *parent)
     : QObject(parent)
 {
 }
 
-// set current logged in user's data/info
+// Set current logged in user's data/info
 void SessionManager::setCurrentUser(const QString &username, const QString &public_key, const QString &authoirizationToken) {
     m_currentUser.setUsername(username);
     m_currentUser.setPublicKey(public_key);
     m_authorizationToken = authoirizationToken;
 }
 
-// clear current session
+// Switch to new chat
+void SessionManager::switchToNewChat(const QString &username) {
+    m_currentPartnerName = username;
+
+    // Check if this user is already reported
+    bool isReported = (m_reportedUsers.count(username.toStdString()) > 0);
+    emit chatSessionChanged(username, isReported);
+}
+
+// Records reported user to maintain the UI state across chat sessions
+void SessionManager::reportUser(const QString &username) {
+    m_reportedUsers.insert(username.toStdString());
+}
+
+// Clear current session
 void SessionManager::clear() {
     m_currentUser.setUsername("");
     m_currentUser.setPublicKey("");
@@ -24,22 +35,22 @@ void SessionManager::clear() {
     m_isAdmin = false;
 }
 
-// set as admin
+// Set as admin
 void SessionManager::setAsAdmin() {
     m_isAdmin = true;
 }
 
-// get username
+// Get username
 QString SessionManager::getUsername() {
     return m_currentUser.getUsername();
 }
 
-// get pub key
+// Get pub key
 QString SessionManager::getPublicKey() {
     return m_currentUser.getPublicKey();
 }
 
-// get auth token
+// Get auth token
 QString SessionManager::getAuthorizationToken() {
     return m_authorizationToken;
 }

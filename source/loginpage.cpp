@@ -13,27 +13,27 @@ LoginPage::LoginPage(QWidget *parent, BackendClient *backendClient)
     // Set up default view for login page
     updateLoginView();
 
-    // connects toggle button for switching between user and admin
+    // Connects toggle button for switching between user and admin
     connect(ui->adminButton, &QPushButton::clicked, this, &LoginPage::toggleLoginMode);
-    // connects login buttin to slot for handling logins
+    // Connects login buttin to slot for handling logins
     connect(ui->loginButton, &QPushButton::clicked, this, &LoginPage::handleLogin);
 
-    // set place holder for username line edit
+    // Set place holder for username line edit
     ui->usernameLineEdit->setPlaceholderText("Username");
 
-    // set place holder and mode for password line edit
+    // Set place holder and mode for password line edit
     ui->passwordLineEdit->setPlaceholderText("Password");
     ui->passwordLineEdit->setEchoMode(QLineEdit::Password);
 
-    // make link styled admin button hand cursor on hover
+    // Make link styled admin button hand cursor on hover
     ui->adminButton->setCursor(Qt::PointingHandCursor);
     ui->loginButton->setCursor(Qt::PointingHandCursor);
 
-    // set background stlying attribute for login page;
+    // Set background stlying attribute for login page;
     this->setAttribute(Qt::WA_StyledBackground, true);
 
 
-    // style sheet for LoginPage
+    // Style sheet for LoginPage
     this->setStyleSheet(R"(
 
         #LoginPage {
@@ -124,7 +124,7 @@ void LoginPage::updateLoginView() {
     }
 }
 
-// slot function for changing mode between user and admin
+// Slot function for changing mode between user and admin
 void LoginPage::toggleLoginMode() {
     if (m_mode == LoginMode::User) {
         m_mode = LoginMode::Admin;
@@ -135,12 +135,13 @@ void LoginPage::toggleLoginMode() {
     updateLoginView();
 }
 
-// slot function for handling login requests (emits loginSuccessful signal)
+// Slot function for handling login requests (emits loginSuccessful signal)
 void LoginPage::handleLogin() {
     const bool isAdmin{m_mode == LoginMode::Admin};
     const QString username{ui->usernameLineEdit->text().trimmed()};
     const QString password{ui->passwordLineEdit->text().trimmed()};
 
+    // Input Validation
     if (username.isEmpty() || username.size() < 5) {
         QMessageBox::warning(this, "Login", "Username must be atleast 5 characters");
         return;
@@ -158,10 +159,12 @@ void LoginPage::handleLogin() {
             return;
         }
     }
+    // Backend authentication
     const QString public_key = "12345";
-
     std::string authorizationToken = m_backendClient->sendLogin(username.toStdString(), public_key.toStdString(), password.toStdString());
     const QString message = QString::fromStdString(authorizationToken);
+
+    // Error handling for various backend failure responses
     if(message == "Request failed"
         || message == "User is already logged in!"
         || message == "Login failed"
@@ -173,7 +176,7 @@ void LoginPage::handleLogin() {
         QMessageBox::warning(this, "Warning", message);
         return;
     }
-
+    // Notify MainWindow that login was successful and pass user credentials
     emit loginSuccessful(username, public_key, QString::fromStdString(authorizationToken), isAdmin);
 }
 

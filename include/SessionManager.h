@@ -5,6 +5,7 @@
 #include "User.h"
 #include <vector>
 #include <message.h>
+#include <set>
 
 /*****************************************
 SessionManager class is used to manage
@@ -52,9 +53,17 @@ public:
     // get logged in user's inbox
     const std::vector<Message>& getInbox() const;
 
+    // switch user chat
+    void switchToNewChat(const QString &username);
+
+    // Tracks reported users to disable their chat UI
+    void reportUser(const QString &username);
+
 signals:
     // signal for chat page and user list page, emits when logged in user gets new messages.
     void inboxUpdated();
+    // Notifies UI to switch the active conversation view
+    void chatSessionChanged(const QString &username, bool isReported);
 
 private:
     // data member for storing current user (their username and public key)
@@ -62,12 +71,16 @@ private:
 
     // holds current user's authorization token
     QString m_authorizationToken;
+    // Name of the user currently being messaged
+    QString m_currentPartnerName;
 
     // data member to store whether logged in user is admin (true or false)
     bool m_isAdmin{false};
 
     // logged in user's inbox (vector of Message objects)
     std::vector<Message> m_inbox{};
+    // Set of usernames reported during this session
+    std::set<std::string> m_reportedUsers;
 };
 
 #endif // SESSIONMANAGER_H

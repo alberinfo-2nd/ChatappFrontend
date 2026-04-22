@@ -7,9 +7,7 @@
 #include "ActiveUsersManager.h"
 #include "sessionManager.h"
 #include "BackendClient.h"
-#include "user.h"
 #include <QPushButton>
-#include <set>
 
 class QVBoxLayout;
 class QLabel;
@@ -26,35 +24,37 @@ public:
     // constructor
     ChatPage(QWidget *parent = nullptr, SessionManager *sessionManager = nullptr, ActiveUsersManager *activeUsersManager = nullptr, BackendClient *backendClient = nullptr, User partnerName={});
     ~ChatPage();
+    // Sets the target user for the current conversation
     void setChatPartner(QString username);
 
 signals:
-    void backToUserListRequested(); // signal for exit button in chat
+    void backToUserListRequested(); // Used to change views
 
 public slots:
-    void displayActiveUsers();
-    void switchToNewChat(const QString &username);
-
+    void displayActiveUsers(); // Refreshes the side-bar user list
+    void updateChatDisplay(const QString &username, bool isReported); // Loads conversation history
 
 private slots:
-    // slot functions
+    // Action Handlers
     void sendMessage();
 
 private:
-    // member attriubutes
     Ui::ChatPage *ui;
+    // Layout Management
     QVBoxLayout *chatScrollAreaLayout = nullptr;
     QVBoxLayout *userListScrollAreaLayout = nullptr;
-    QHash<QString, QWidget*> activeUserLabels; // changed to qwidget
+    // Maps usernames to their row widgets
+    QHash<QString, QWidget*> activeUserLabels;
+    // Core Managers
     SessionManager *m_sessionManager;
     ActiveUsersManager *m_activeUsersManager;
     BackendClient *m_backendClient;
+    // Conversation State
     User m_currentPartner;
     QLabel* chatPartnerLabel;
     QPushButton* reportBtn;
-    std::set<std::string> m_reportedUsers; // reported usernames holder
 
-    //helper functions
+    // UI helper functions
     QLabel* createNewMessageLabel(const QString &message);
     void displayReceivedMessage();
     void displaySentMessage(const QString &message);

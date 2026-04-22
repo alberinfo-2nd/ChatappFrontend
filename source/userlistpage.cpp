@@ -13,21 +13,28 @@ UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, Acti
     , m_sessionManager{sessionManager}
     , m_activeUsersManager{activeUsersManager}
     , m_backendClient{backendClient}
-
 {
     ui->setupUi(this);
+
+    // UI scroll area and layout behavior
+    ui->pushButton->setFixedSize(120, 40);
     ui->pushButton->setCursor(Qt::PointingHandCursor);
     ui->LeftScrollArea->setWidget(ui->LeftScrollWidget);
     ui->LeftScrollArea->setWidgetResizable(true);
     ui->LeftScrollWidget->setLayout(ui->verticalLayout_3);
 
-    this->setAttribute(Qt::WA_StyledBackground, true); // fixes background problem
+    // Ensure user rows stay at the top
+    ui->verticalLayout_3->setAlignment(Qt::AlignTop);
+    ui->verticalLayout_3->setSpacing(5);
+
+    // Attribute allows page to have its own background color
+    this->setAttribute(Qt::WA_StyledBackground, true);
 
     this->setStyleSheet(R"(
+    /* Styling for the main page and scroll elements */
     #UserListPage {
         background-color: #54566a;
     }
-
     #OnlineUserLabel {
        color: white;
        font-size: 30pt;
@@ -35,14 +42,12 @@ UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, Acti
        border-radius: 15px;
        padding: 8px 20px;
     }
-
     #LeftScrollArea, #LeftScrollWidget {
         background-color: #bacba8;
         border-radius: 20px;
         padding: 10px;
         margin: 4px;
     }
-
     #LeftScrollWidget QPushButton{
         background-color: white;
         color: black;
@@ -63,7 +68,7 @@ UserListPage::UserListPage(QWidget *parent, SessionManager *sessionManager, Acti
         background-color: #d9d9d9;
     }
 )");
-    // connect signal from active users manager to display active users everytime the list is updated
+    // Refresh the UI whenever the online list or the user's inbox changes
     connect(m_activeUsersManager, &ActiveUsersManager::activeUsersUpdated, this, &UserListPage::displayActiveUsers);
     connect(m_sessionManager, &SessionManager::inboxUpdated, this, &UserListPage::displayActiveUsers);
 }
@@ -73,34 +78,35 @@ UserListPage::~UserListPage()
     delete ui;
 }
 
-// Function to Display List
+// Function: display user list UI
 // Updated to allow auto updates of active user list
 void UserListPage::displayActiveUsers() {
-    qDebug() << "Updating UI. Manager says these users are online:"
-             << m_activeUsersManager->getActiveUsers().size();
     qDebug() << "Is admin:" << m_sessionManager->getIsAdmin();
 
-    if (m_sessionManager->getUsername().isEmpty()) {
-        return;
-    }
-
+    // Clear existing widgets from the layout to prevent duplicates
     QLayoutItem* item;
     while ((item = ui->verticalLayout_3->takeAt(0)) != nullptr) {
         if (item->widget()) {
             item->widget()->deleteLater();
         }
         delete item;
+    }   
+    activeUserLabels.clear();
+
+    if (m_sessionManager->getUsername().isEmpty()) {
+        return;
     }
 
-    activeUserLabels.clear();
+    qDebug() << "Updating UI. Manager says these users are online:"
+             << m_activeUsersManager->getActiveUsers().size();
 
     QString myName = m_sessionManager->getUsername();
     auto& inbox = m_sessionManager->getInbox();
 
-    // username -> public_key
+    // Keep track of unique users to show (username -> public_key)
     QHash<QString, QString> usersToDisplay;
 
-    // 1. Add normal active users
+    // Get currently online users
     for (const auto& user : m_activeUsersManager->getActiveUsers()) {
         QString username = user.getUsername();
         QString public_key = user.getPublicKey();
@@ -112,7 +118,7 @@ void UserListPage::displayActiveUsers() {
         usersToDisplay.insert(username, public_key);
     }
 
-    // 2. Add inbox senders (ex: admin who messaged user)
+    // Get users who have sent messages
     for (const auto& message : inbox) {
         QString sender = message.getSender();
 
@@ -126,19 +132,23 @@ void UserListPage::displayActiveUsers() {
         }
     }
 
-    // 3. Build UI
+    // Create a row widget for each user in the list
     for (auto it = usersToDisplay.begin(); it != usersToDisplay.end(); ++it) {
         addUserToList(it.key(), it.value());
     }
+    ui->verticalLayout_3->addStretch(1);
 }
 
-// Funtion to Add User
+// Function: Creates and adds a single user row (button + kick button for admins)
 void UserListPage::addUserToList(const QString &username, const QString &public_key){
     auto& inbox = m_sessionManager->getInbox();
+
+    // Container widget for the entire row
     QWidget* rowWidget = new QWidget(ui->LeftScrollWidget);
     rowWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     rowWidget->setLayoutDirection(Qt::LeftToRight);
 
+    // Horizontal layout to hold the Username button and the Kick button
     QHBoxLayout* rowLayout = new QHBoxLayout(rowWidget);
     rowLayout->setDirection(QBoxLayout::LeftToRight);
     rowLayout->setContentsMargins(0, 0, 0, 0);
@@ -146,14 +156,16 @@ void UserListPage::addUserToList(const QString &username, const QString &public_
 
     QPushButton* userBtn = new QPushButton(username, rowWidget);
     QPushButton* kickBtn = new QPushButton("Kick", rowWidget);
-
+    kickBtn->setCursor(Qt::PointingHandCursor);
     userBtn->setCursor(Qt::PointingHandCursor);
 
+    // Buttons resize
     userBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     kickBtn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
     rowLayout->setStretchFactor(userBtn, 3);
     rowLayout->setStretchFactor(kickBtn, 1);
+
+    // Button styling
     userBtn->setStyleSheet(R"(
         QPushButton {
             background-color: white;
@@ -165,12 +177,14 @@ void UserListPage::addUserToList(const QString &username, const QString &public_
     kickBtn->setStyleSheet(R"(
         QPushButton {
             background-color: white;
+            border-radius: 5px;
+            padding: 5px 10px;
         }
         QPushButton:hover {
             background-color: #d9d9d9;
         }
     )");
-
+    // Count unread messages from this specific user
     int numberOfMessages{0};
     for (size_t i{1}; i <= inbox.size(); ++i) {
         const QString sender = inbox.at(i - 1).getSender();
@@ -178,15 +192,14 @@ void UserListPage::addUserToList(const QString &username, const QString &public_
             numberOfMessages++;
         }
     }
-
+    // Append message count to the button text if any exist
     if (numberOfMessages != 0) {
         userBtn->setText(username + "   [" + QString::number(numberOfMessages) + "]");
     }
 
-
-
     rowLayout->addWidget(userBtn);
     rowLayout->addWidget(kickBtn);
+    // Kick button is only visible to Admin users
     kickBtn->hide();
 
     if (m_sessionManager->getIsAdmin()) {
@@ -197,7 +210,7 @@ void UserListPage::addUserToList(const QString &username, const QString &public_
 
     }
 
-    // Button to click user
+    // Button to open a chat when a user row is clicked
     connect(userBtn, &QPushButton::clicked, this, [this, username, public_key]() {
         emit chatRequested(username, public_key);
     });
@@ -205,7 +218,7 @@ void UserListPage::addUserToList(const QString &username, const QString &public_
     activeUserLabels.insert(username, rowWidget);
 }
 
-// Funtion to Remove Users (copied from chat branch)
+// Funtion: Removes a specific user from the UI
 void UserListPage::removeActiveUser(const QString &username) {
     auto iterator = activeUserLabels.find(username);
     if (iterator == activeUserLabels.end()) {
@@ -217,8 +230,15 @@ void UserListPage::removeActiveUser(const QString &username) {
     activeUserLabels.erase(iterator);
 }
 
-// Function for Exit Button
+// Function: Handles the logout button click
 void UserListPage::on_pushButton_clicked() {
+    QLayoutItem* item;
+    while ((item = ui->verticalLayout_3->takeAt(0)) != nullptr) {
+        if (item->widget()) item->widget()->deleteLater();
+        delete item;
+    }
+    activeUserLabels.clear();
+
     emit logoutRequested();
 }
 
