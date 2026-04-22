@@ -80,38 +80,49 @@ UserListPage::~UserListPage()
 
 // Function: display user list UI
 // Updated to allow auto updates of active user list
-void UserListPage::displayActiveUsers() {
-    qDebug() << "Is admin:" << m_sessionManager->getIsAdmin();
+void UserListPage::displayActiveUsers()
+{
 
-    // Clear existing widgets from the layout to prevent duplicates
-    QLayoutItem* item;
-    while ((item = ui->verticalLayout_3->takeAt(0)) != nullptr) {
-        if (item->widget()) {
-            item->widget()->deleteLater();
-        }
-        delete item;
-    }   
-    activeUserLabels.clear();
-
-    if (m_sessionManager->getUsername().isEmpty()) {
+    if (m_sessionManager->getUsername().isEmpty())
+    {
         return;
     }
 
-    qDebug() << "Updating UI. Manager says these users are online:"
-             << m_activeUsersManager->getActiveUsers().size();
+    // Clear existing widgets from the layout to prevent duplicates
+    QLayoutItem *item;
+    while ((item = ui->verticalLayout_3->takeAt(0)) != nullptr)
+    {
+        if (item->widget())
+        {
+            item->widget()->deleteLater();
+        }
+        delete item;
+    }
+    activeUserLabels.clear();
+
+    if (m_sessionManager->getUsername().isEmpty())
+    {
+        return;
+    }
+
+    qDebug() << "Updating UI. Manager says there are"
+             << m_activeUsersManager->getActiveUsers().size()
+             << "users online.\n";
 
     QString myName = m_sessionManager->getUsername();
-    auto& inbox = m_sessionManager->getInbox();
+    auto &inbox = m_sessionManager->getInbox();
 
     // Keep track of unique users to show (username -> public_key)
     QHash<QString, QString> usersToDisplay;
 
     // Get currently online users
-    for (const auto& user : m_activeUsersManager->getActiveUsers()) {
+    for (const auto &user : m_activeUsersManager->getActiveUsers())
+    {
         QString username = user.getUsername();
         QString public_key = user.getPublicKey();
 
-        if (username == myName) {
+        if (username == myName)
+        {
             continue;
         }
 
@@ -119,43 +130,47 @@ void UserListPage::displayActiveUsers() {
     }
 
     // Get users who have sent messages
-    for (const auto& message : inbox) {
+    for (const auto &message : inbox)
+    {
         QString sender = message.getSender();
 
-        if (sender == myName) {
+        if (sender == myName)
+        {
             continue;
         }
 
-        // Only add if not already present from active users
-        if (!usersToDisplay.contains(sender)) {
+        if (!usersToDisplay.contains(sender))
+        {
             usersToDisplay.insert(sender, "");
         }
     }
 
     // Create a row widget for each user in the list
-    for (auto it = usersToDisplay.begin(); it != usersToDisplay.end(); ++it) {
+    for (auto it = usersToDisplay.begin(); it != usersToDisplay.end(); ++it)
+    {
         addUserToList(it.key(), it.value());
     }
     ui->verticalLayout_3->addStretch(1);
 }
 
 // Function: Creates and adds a single user row (button + kick button for admins)
-void UserListPage::addUserToList(const QString &username, const QString &public_key){
-    auto& inbox = m_sessionManager->getInbox();
+void UserListPage::addUserToList(const QString &username, const QString &public_key)
+{
+    auto &inbox = m_sessionManager->getInbox();
 
     // Container widget for the entire row
-    QWidget* rowWidget = new QWidget(ui->LeftScrollWidget);
+    QWidget *rowWidget = new QWidget(ui->LeftScrollWidget);
     rowWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     rowWidget->setLayoutDirection(Qt::LeftToRight);
 
     // Horizontal layout to hold the Username button and the Kick button
-    QHBoxLayout* rowLayout = new QHBoxLayout(rowWidget);
+    QHBoxLayout *rowLayout = new QHBoxLayout(rowWidget);
     rowLayout->setDirection(QBoxLayout::LeftToRight);
     rowLayout->setContentsMargins(0, 0, 0, 0);
     rowLayout->setSpacing(8);
 
-    QPushButton* userBtn = new QPushButton(username, rowWidget);
-    QPushButton* kickBtn = new QPushButton("Kick", rowWidget);
+    QPushButton *userBtn = new QPushButton(username, rowWidget);
+    QPushButton *kickBtn = new QPushButton("Kick", rowWidget);
     kickBtn->setCursor(Qt::PointingHandCursor);
     userBtn->setCursor(Qt::PointingHandCursor);
 
@@ -186,14 +201,17 @@ void UserListPage::addUserToList(const QString &username, const QString &public_
     )");
     // Count unread messages from this specific user
     int numberOfMessages{0};
-    for (size_t i{1}; i <= inbox.size(); ++i) {
+    for (size_t i{1}; i <= inbox.size(); ++i)
+    {
         const QString sender = inbox.at(i - 1).getSender();
-        if (sender == username) {
+        if (sender == username)
+        {
             numberOfMessages++;
         }
     }
     // Append message count to the button text if any exist
-    if (numberOfMessages != 0) {
+    if (numberOfMessages != 0)
+    {
         userBtn->setText(username + "   [" + QString::number(numberOfMessages) + "]");
     }
 
@@ -202,43 +220,45 @@ void UserListPage::addUserToList(const QString &username, const QString &public_
     // Kick button is only visible to Admin users
     kickBtn->hide();
 
-    if (m_sessionManager->getIsAdmin()) {
+    if (m_sessionManager->getIsAdmin())
+    {
         kickBtn->show();
-        connect(kickBtn, &QPushButton::clicked, this, [this, username]() {
-            m_backendClient->kick(username.toStdString());
-        });
-
+        connect(kickBtn, &QPushButton::clicked, this, [this, username]()
+                { m_backendClient->kick(username.toStdString()); });
     }
 
     // Button to open a chat when a user row is clicked
-    connect(userBtn, &QPushButton::clicked, this, [this, username, public_key]() {
-        emit chatRequested(username, public_key);
-    });
-    ui-> verticalLayout_3->insertWidget(0, rowWidget);
+    connect(userBtn, &QPushButton::clicked, this, [this, username, public_key]()
+            { emit chatRequested(username, public_key); });
+    ui->verticalLayout_3->insertWidget(0, rowWidget);
     activeUserLabels.insert(username, rowWidget);
 }
 
 // Funtion: Removes a specific user from the UI
-void UserListPage::removeActiveUser(const QString &username) {
+void UserListPage::removeActiveUser(const QString &username)
+{
     auto iterator = activeUserLabels.find(username);
-    if (iterator == activeUserLabels.end()) {
+    if (iterator == activeUserLabels.end())
+    {
         return;
     }
 
-    QWidget* userWidget = iterator.value();
+    QWidget *userWidget = iterator.value();
     userWidget->deleteLater();
     activeUserLabels.erase(iterator);
 }
 
 // Function: Handles the logout button click
-void UserListPage::on_pushButton_clicked() {
-    QLayoutItem* item;
-    while ((item = ui->verticalLayout_3->takeAt(0)) != nullptr) {
-        if (item->widget()) item->widget()->deleteLater();
+void UserListPage::on_pushButton_clicked()
+{
+    QLayoutItem *item;
+    while ((item = ui->verticalLayout_3->takeAt(0)) != nullptr)
+    {
+        if (item->widget())
+            item->widget()->deleteLater();
         delete item;
     }
     activeUserLabels.clear();
 
     emit logoutRequested();
 }
-

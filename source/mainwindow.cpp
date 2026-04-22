@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
     , backendClient(new BackendClient(this, sessionManager))
     , loginPage(new LoginPage(this, backendClient))
     , userListPage(new UserListPage(this, sessionManager, activeUsersManager, backendClient))
-    , chatPage(new ChatPage(this, sessionManager, activeUsersManager, backendClient, User("", "")))
+    , chatPage(new ChatPage(this, sessionManager, activeUsersManager, backendClient, User()))
 {
 
     ui->setupUi(this);
@@ -31,22 +31,18 @@ MainWindow::MainWindow(QWidget *parent)
     ui->stackedWidget->setCurrentWidget(loginPage);
 
     // Lamda function for for handling logging out or being kicked
-    auto handleLogout = [this](bool kicked = false){
-        qDebug()<<"User has logged out. Session Cleared";
-        // Get Data
-        std::string user = sessionManager->getUsername().toStdString();
-        std::string token = sessionManager->getAuthorizationToken().toStdString();
+    auto handleLogout = [this](bool kicked = false)
+    {
+        qDebug() << "User has logged out. Session Cleared";
 
-        if (!token.empty()) {
-            backendClient->logout(user, token);
-        }
-
+        backendClient->logout();
         backendClient->stopPolling();
         sessionManager->clear();
         activeUsersManager->clearActiveUsers();
         showLoginPage();
 
-        if (kicked) {
+        if (kicked)
+        {
             QMessageBox::warning(this, "Warning", "You have been kicked by an admin!");
         }
     };
@@ -66,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent)
 // MainWindow destructor
 MainWindow::~MainWindow()
 {
-    backendClient->logout(sessionManager->getUsername().toStdString(), sessionManager->getAuthorizationToken().toStdString());
+    backendClient->logout();
     delete ui;
     delete sessionManager;
     delete activeUsersManager;
@@ -74,25 +70,30 @@ MainWindow::~MainWindow()
 }
 
 // MainWindow slot function to show Login Page
-void MainWindow::showLoginPage() {
+void MainWindow::showLoginPage()
+{
     ui->stackedWidget->setCurrentWidget(loginPage);
 }
 
 // MainWindow slot function to show User List Page
-void MainWindow::showUserListPage() {
+void MainWindow::showUserListPage()
+{
     ui->stackedWidget->setCurrentWidget(userListPage);
     chatPage->setChatPartner("");
 }
 
-//MainWindow function to show Chat Page
-void MainWindow::showChatPage() {
+// MainWindow function to show Chat Page
+void MainWindow::showChatPage()
+{
     ui->stackedWidget->setCurrentWidget(chatPage);
 }
 
-// Handle succesful logins
-void MainWindow::handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken, const bool &isAdmin) {
-    sessionManager->setCurrentUser(username, public_key, authorizationToken);
-    if (isAdmin) {
+// used to handle succesful logins
+void MainWindow::handleSuccessfulLogin(const QString &username, const QString &publicKey, const QByteArray &privateKey, const QString &authorizationToken, const bool &isAdmin)
+{
+    sessionManager->setCurrentUser(username, publicKey, privateKey, authorizationToken);
+    if (isAdmin)
+    {
         sessionManager->setAsAdmin();
     }
 
@@ -103,8 +104,8 @@ void MainWindow::handleSuccessfulLogin(const QString &username, const QString &p
 
 // Used to handle chat requests
 // Updates the session data and switches the UI to the chat screen
-void MainWindow::handleChatRequest(const QString &username, const QString &public_key) {
-   sessionManager->switchToNewChat(username);
+void MainWindow::handleChatRequest(const QString &username, const QString &publicKey)
+{
+    sessionManager->switchToNewChat(username, publicKey);
     showChatPage();
-
 }

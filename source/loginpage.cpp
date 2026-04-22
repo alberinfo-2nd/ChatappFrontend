@@ -2,6 +2,7 @@
 #include "ui_loginpage.h"
 #include <QMessageBox>
 #include <BackendClient.h>
+#include <sodium.h>
 
 LoginPage::LoginPage(QWidget *parent, BackendClient *backendClient)
     : QWidget(parent)
@@ -31,7 +32,6 @@ LoginPage::LoginPage(QWidget *parent, BackendClient *backendClient)
 
     // Set background stlying attribute for login page;
     this->setAttribute(Qt::WA_StyledBackground, true);
-
 
     // Style sheet for LoginPage
     this->setStyleSheet(R"(
@@ -109,14 +109,18 @@ LoginPage::~LoginPage()
 }
 
 // Updates UI based on current mode(either admin or user)
-void LoginPage::updateLoginView() {
-    const bool isAdmin{ m_mode == LoginMode::Admin };
+void LoginPage::updateLoginView()
+{
+    const bool isAdmin{m_mode == LoginMode::Admin};
 
-    if (isAdmin) {
+    if (isAdmin)
+    {
         ui->adminButton->setText("Back to user login");
         ui->descriptiveLabel->setText("Enter username and password");
         ui->passwordLineEdit->show();
-    } else {
+    }
+    else
+    {
         ui->adminButton->setText("Admin login");
         ui->descriptiveLabel->setText("Create a username");
         ui->passwordLineEdit->clear();
@@ -125,10 +129,14 @@ void LoginPage::updateLoginView() {
 }
 
 // Slot function for changing mode between user and admin
-void LoginPage::toggleLoginMode() {
-    if (m_mode == LoginMode::User) {
+void LoginPage::toggleLoginMode()
+{
+    if (m_mode == LoginMode::User)
+    {
         m_mode = LoginMode::Admin;
-    } else {
+    }
+    else
+    {
         m_mode = LoginMode::User;
     }
 
@@ -136,47 +144,57 @@ void LoginPage::toggleLoginMode() {
 }
 
 // Slot function for handling login requests (emits loginSuccessful signal)
-void LoginPage::handleLogin() {
+void LoginPage::handleLogin()
+{
     const bool isAdmin{m_mode == LoginMode::Admin};
     const QString username{ui->usernameLineEdit->text().trimmed()};
     const QString password{ui->passwordLineEdit->text().trimmed()};
 
     // Input Validation
-    if (username.isEmpty() || username.size() < 5) {
+    if (username.isEmpty() || username.size() < 5)
+    {
         QMessageBox::warning(this, "Login", "Username must be atleast 5 characters");
         return;
-    } else if (username.contains(' ')) {
+    }
+    else if (username.contains(' '))
+    {
         QMessageBox::warning(this, "Login", "Username can't contain spaces");
         return;
     }
 
-    if (m_mode == LoginMode::Admin) {
-        if (password.isEmpty()) {
+    if (m_mode == LoginMode::Admin)
+    {
+        if (password.isEmpty())
+        {
             QMessageBox::warning(this, "Warning", "Password can't empty");
             return;
-        } else if (password.contains(' ')) {
+        }
+        else if (password.contains(' '))
+        {
             QMessageBox::warning(this, "Warning", "Password can't contain spaces");
             return;
         }
     }
-    // Backend authentication
-    const QString public_key = "12345";
-    std::string authorizationToken = m_backendClient->sendLogin(username.toStdString(), public_key.toStdString(), password.toStdString());
+
+    QByteArray publicKey;
+    QByteArray privateKey;
+
+    publicKey.resize(crypto_box_PUBLICKEYBYTES);
+    privateKey.resize(crypto_box_SECRETKEYBYTES);
+
+    crypto_box_keypair(
+        reinterpret_cast<unsigned char *>(publicKey.data()),
+        reinterpret_cast<unsigned char *>(privateKey.data()));
+
+    std::string authorizationToken = m_backendClient->sendLogin(username.toStdString(), publicKey.toBase64().toStdString(), password.toStdString());
+
     const QString message = QString::fromStdString(authorizationToken);
 
     // Error handling for various backend failure responses
-    if(message == "Request failed"
-        || message == "User is already logged in!"
-        || message == "Login failed"
-        || message == "Administrator not found!"
-        || message == "Invalid password!"
-        || message == "Username belongs to an admin!"
-        )
+    if (message == "Request failed" || message == "User is already logged in!" || message == "Login failed" || message == "Administrator not found!" || message == "Invalid password!" || message == "Username belongs to an admin!")
     {
         QMessageBox::warning(this, "Warning", message);
         return;
     }
-    // Notify MainWindow that login was successful and pass user credentials
-    emit loginSuccessful(username, public_key, QString::fromStdString(authorizationToken), isAdmin);
+    emit loginSuccessful(username, QString::fromStdString(publicKey.toBase64().toStdString()), privateKey, QString::fromStdString(authorizationToken), isAdmin);
 }
-

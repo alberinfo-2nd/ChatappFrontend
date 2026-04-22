@@ -11,10 +11,10 @@ class BackendClient;
 class SessionManager;
 class ActiveUsersManager;
 
-
 QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
+namespace Ui
+{
+    class MainWindow;
 }
 QT_END_NAMESPACE
 
@@ -32,11 +32,10 @@ private slots:
     void showLoginPage();
     void showUserListPage();
     void showChatPage();
-    // Logic Handlers
-    void handleSuccessfulLogin(const QString &username, const QString &public_key, const QString &authorizationToken, const bool &isAdmin);
-    void handleChatRequest(const QString &username, const QString &publick_key);
+    void handleSuccessfulLogin(const QString &username, const QString &publicKey, const QByteArray &privateKey, const QString &authorizationToken, const bool &isAdmin);
+    void handleChatRequest(const QString &username, const QString &publicKey);
 
-// Declaring Member attributes
+    // Declaring Member attributes
 private:
     Ui::MainWindow *ui;
     // Core Managers

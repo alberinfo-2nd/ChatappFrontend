@@ -62,8 +62,15 @@ else()
     endif()
 endif()
 
-target_include_directories(ChatappFrontend PRIVATE include)
-target_link_libraries(ChatappFrontend PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_include_directories(ChatappFrontend PRIVATE
+    include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libsodium/include
+)
+
+target_link_libraries(ChatappFrontend PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libsodium/lib/libsodium.a
+)
 if(WIN32)
     target_link_libraries(ChatappFrontend PRIVATE ws2_32)
 endif()
