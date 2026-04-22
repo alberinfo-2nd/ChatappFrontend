@@ -1,5 +1,5 @@
 # ChatappFrontend
-FrontEnd for ChatApp: Allows interaction with BackEnd
+FrontEnd for ChatApp: Messaging interface built with C++ and Qt6.
 Project for COP3003 Spring2026
 --- 
 ## Team Members
@@ -11,7 +11,7 @@ Project for COP3003 Spring2026
 ## Requirements
 - C++ Compiler
 - Qt6 Framework
-- Build Tool
+- Build Tool: CMake or qmake
 ---
 ## Steps
 1. Clone Repository: 
@@ -20,24 +20,40 @@ git clone https://github.com/alberinfo-2nd/ChatappFrontend.git
 3. Build Project
 4. Run the application
 ---
+## Features
+1. Secure Messaging: Encrypted messages only readable to the person receiving them. 
+2. Message Cleaning: Self destroying messages that are deleted from the server's memory once they're read by the user.
+3. Admin Management: Control system for admins to issue strikes and manage active user sessions.
+4. User Reporting: Integrated reporting mechanism to flag problematic behavior.
+---
 ## Class Structure
-**User (Base Class)**
-- #username
-- -public_key
-- -strikeCount
-- +getUsername()
-- +reportUser() 
+- MainWindow: Acts as the primary controller for switching between UI pages (Login, UserList, and Chat).
+- SessionManager: Manages the logged-in user’s state, message inbox, and session-specific logic like reported users.
+- ChatPage: The primary messaging interface. Updates based on signals from the SessionManager.
+- BackendClient: Handles all network communication and API calls to the server.
+- ActiveUsersManager: Tracks and updates the list of currently online users.
 
-**AdminUser (Derived Class)**
-- -password
-- +authenticate()
-- +disconnectUser()
 ---
 ## OPP Used
 ### Encapsulation
-- Data members like adminPassword, public_key or username are kept private. Access controlled via public getter and setter methods and only available to each object. 
+- Data members like m_authorizationToken, m_reportedUsers, and m_isAdmin are kept private within SessionManager. Access controlled via public getter and setter methods. 
 ### Inheritance
--  AdminUser inherits from the User base class, sharing common traits such as username, while having unique behaviors such as passwords which are retrieved from a text file.  
+-  Classes like ChatPage and LoginPage inherit from QWidget, allowing them to use Qt's specialized layout and event-handling systems. 
+- AdminUser inherits from the User base class. 
 ### Polymorphism
-- Implemented through virtual and override functions. I.e., login changes for normal and admin users, where admin users require a text file lookup for the password hash.  
-## Resources
+- Implemented through virtual and override functions. 
+### Composition
+- MainWindow has-a SessionManager and ChatPage to coordinate the application flow, while ChatPage has-a QVBoxLayout and QHash to dynamically organize messages and user labels.
+---
+## AI Tools
+- Gemini: Used  for debugging and troubleshooting UI implementation to help resolve layout issues within the Qt framework.
+---
+## External Resources
+- YouTube tutorial on basic Qt GUI setup: https://www.youtube.com/playlist?list=PLS1QulWo1RIZiBcTr5urECberTITj7gjA
+---
+### Collaboration Policy Statement
+All submitted work reflects our team’s understanding. Any external code
+has been:
+- Reviewed
+- Modified as needed
+- Integrated by our team
