@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QMessageBox>
 #include <sodium.h>
 
 // Constructor
@@ -248,12 +249,15 @@ void ChatPage::sendMessage()
 // Updates the sidebar with online users and message notifications
 void ChatPage::displayActiveUsers()
 {
+    // remove current active users list
     clearActiveUserList();
+
     QString myName = m_sessionManager->getUsername();
     auto &inbox = m_sessionManager->getInbox();
 
     QHash<QString, QString> usersToDisplay;
 
+    // Loop through all of active users and them to usersToDisplay
     for (const auto &user : m_activeUsersManager->getActiveUsers())
     {
         QString username = user.getUsername();
@@ -265,6 +269,7 @@ void ChatPage::displayActiveUsers()
         usersToDisplay.insert(username, publicKey);
     }
 
+    // loop through all messages and if message is from an admin add them to usersToDisplay
     for (const auto &message : inbox)
     {
         QString sender = message.getSender();
@@ -274,7 +279,7 @@ void ChatPage::displayActiveUsers()
 
         if (!usersToDisplay.contains(sender))
         {
-            usersToDisplay.insert(sender, "");
+            usersToDisplay.insert(sender, message.getAdminPublicKey());
         }
     }
 
@@ -344,7 +349,10 @@ void ChatPage::displayActiveUsers()
         {
             kickBtn->show();
             connect(kickBtn, &QPushButton::clicked, this, [this, username]()
-                    { m_backendClient->kick(username.toStdString()); });
+            {
+                std::string message = m_backendClient->kick(username.toStdString());
+                QMessageBox::information(this, "Kick User Request", QString::fromStdString(message));
+            });
         }
 
         // Switches the main chat view to the selected user
@@ -352,25 +360,9 @@ void ChatPage::displayActiveUsers()
                 { m_sessionManager->switchToNewChat(username, publicKey); });
 
         userListScrollAreaLayout->addWidget(rowWidget);
-        activeUserLabels.insert(username, rowWidget);
         rowWidget->show();
     }
     ui->userListScrollAreaContent->adjustSize();
-    alternateLabelStyle();
-}
-
-// Delete label assiociated to an active user
-void ChatPage::removeActiveUser(const QString &username)
-{
-    auto iterator = activeUserLabels.find(username);
-    if (iterator == activeUserLabels.end())
-    {
-        return;
-    }
-    QWidget *rowWidget = iterator.value();
-    rowWidget->deleteLater();
-    activeUserLabels.erase(iterator);
-
     alternateLabelStyle();
 }
 
@@ -387,7 +379,6 @@ void ChatPage::clearActiveUserList()
         }
         delete item;
     }
-    activeUserLabels.clear();
 }
 
 // Clear chat box

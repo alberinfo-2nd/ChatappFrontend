@@ -38,6 +38,8 @@ void SessionManager::clear()
     m_currentUser.setPublicKey("");
     m_authorizationToken = "";
     m_privateKey.clear();
+    m_inbox.clear();
+    m_reportedUsers.clear();
     m_isAdmin = false;
 }
 

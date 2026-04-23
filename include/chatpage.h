@@ -44,8 +44,6 @@ private:
     // Layout Management
     QVBoxLayout *chatScrollAreaLayout = nullptr;
     QVBoxLayout *userListScrollAreaLayout = nullptr;
-    // Maps usernames to their row widgets
-    QHash<QString, QWidget *> activeUserLabels;
     // Core Managers
     SessionManager *m_sessionManager;
     ActiveUsersManager *m_activeUsersManager;
@@ -59,7 +57,6 @@ private:
     QLabel *createNewMessageLabel(const QString &message);
     void displayReceivedMessage();
     void displaySentMessage(const QString &message);
-    void removeActiveUser(const QString &username);
     void alternateLabelStyle();
     void clearDisplayedMessages();
     void clearActiveUserList();

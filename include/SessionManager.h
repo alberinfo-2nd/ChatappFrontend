@@ -10,7 +10,7 @@
 /*****************************************
 SessionManager class is used to manage
 the current logged in user's data. Such as
-their username, public key, authorization
+their username, public key, private key, authorization
 token, and inbox. Is a QObject so object
 can emit signals and listen for signals.
 ******************************************/

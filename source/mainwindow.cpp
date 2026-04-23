@@ -12,7 +12,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , sessionManager(new SessionManager())
+    , sessionManager(new SessionManager(this))
     , activeUsersManager(new ActiveUsersManager(this))
     , backendClient(new BackendClient(this, sessionManager))
     , loginPage(new LoginPage(this, backendClient))
@@ -34,8 +34,10 @@ MainWindow::MainWindow(QWidget *parent)
     auto handleLogout = [this](bool kicked = false)
     {
         qDebug() << "User has logged out. Session Cleared";
+        const std::string token = sessionManager->getAuthorizationToken().toStdString();
+        const std::string username = sessionManager->getUsername().toStdString();
 
-        backendClient->logout();
+        backendClient->logout(username, token);
         backendClient->stopPolling();
         sessionManager->clear();
         activeUsersManager->clearActiveUsers();
@@ -62,11 +64,8 @@ MainWindow::MainWindow(QWidget *parent)
 // MainWindow destructor
 MainWindow::~MainWindow()
 {
-    backendClient->logout();
+    backendClient->logout(sessionManager->getUsername().toStdString(), sessionManager->getAuthorizationToken().toStdString());
     delete ui;
-    delete sessionManager;
-    delete activeUsersManager;
-    delete backendClient;
 }
 
 // MainWindow slot function to show Login Page

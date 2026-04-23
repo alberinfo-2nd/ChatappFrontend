@@ -10,11 +10,16 @@ public:
     // Getters
     QString getSender() const;
     QString getMessage() const;
+    QString getAdminPublicKey() const;
     QString getTimeStamp() const;
+    // Setter
+    void setAdminPublicKey(const QString &publicKey);
+
 
 private:
     QString m_timeStamp;
     QString m_sender;
+    QString m_adminPublicKey{""};
     QString m_message;
 };
 

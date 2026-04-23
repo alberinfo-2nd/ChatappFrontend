@@ -22,7 +22,6 @@ public:
     explicit UserListPage(QWidget *parent = nullptr, SessionManager *sessionManager = nullptr, ActiveUsersManager *activeUsersManager = nullptr, BackendClient *backendClient = nullptr);
     ~UserListPage();
     // UI Management: Updates the scroll area
-    void removeActiveUser(const QString &username);
     void addUserToList(const QString &username, const QString &public_key);
 
 signals:
@@ -38,7 +37,6 @@ private slots:
 private:
     Ui::UserListPage *ui;
     // Mapping  usernames to their QWidget rows
-    QHash<QString, QWidget*> activeUserLabels;
     // Core logic managers
     SessionManager *m_sessionManager;
     ActiveUsersManager *m_activeUsersManager;

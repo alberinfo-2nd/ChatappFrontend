@@ -3,6 +3,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QMessageBox>
 #include <SessionManager.h>
 #include <ActiveUsersManager.h>
 #include <BackendClient.h>
@@ -98,7 +99,6 @@ void UserListPage::displayActiveUsers()
         }
         delete item;
     }
-    activeUserLabels.clear();
 
     if (m_sessionManager->getUsername().isEmpty())
     {
@@ -141,7 +141,7 @@ void UserListPage::displayActiveUsers()
 
         if (!usersToDisplay.contains(sender))
         {
-            usersToDisplay.insert(sender, "");
+            usersToDisplay.insert(sender, message.getAdminPublicKey());
         }
     }
 
@@ -224,28 +224,15 @@ void UserListPage::addUserToList(const QString &username, const QString &public_
     {
         kickBtn->show();
         connect(kickBtn, &QPushButton::clicked, this, [this, username]()
-                { m_backendClient->kick(username.toStdString()); });
+        {   std::string message = m_backendClient->kick(username.toStdString());
+            QMessageBox::information(this, "Kick User Request", QString::fromStdString(message));
+        });
     }
 
     // Button to open a chat when a user row is clicked
     connect(userBtn, &QPushButton::clicked, this, [this, username, public_key]()
             { emit chatRequested(username, public_key); });
     ui->verticalLayout_3->insertWidget(0, rowWidget);
-    activeUserLabels.insert(username, rowWidget);
-}
-
-// Funtion: Removes a specific user from the UI
-void UserListPage::removeActiveUser(const QString &username)
-{
-    auto iterator = activeUserLabels.find(username);
-    if (iterator == activeUserLabels.end())
-    {
-        return;
-    }
-
-    QWidget *userWidget = iterator.value();
-    userWidget->deleteLater();
-    activeUserLabels.erase(iterator);
 }
 
 // Function: Handles the logout button click
@@ -258,7 +245,6 @@ void UserListPage::on_pushButton_clicked()
             item->widget()->deleteLater();
         delete item;
     }
-    activeUserLabels.clear();
 
     emit logoutRequested();
 }

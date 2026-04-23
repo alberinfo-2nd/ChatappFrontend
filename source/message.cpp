@@ -14,6 +14,14 @@ QString Message::getMessage() const{
     return m_message;
 }
 
+QString Message::getAdminPublicKey() const{
+    return m_adminPublicKey;
+}
+
 QString Message::getTimeStamp() const{
     return m_timeStamp;
+}
+
+void Message::setAdminPublicKey(const QString &publicKey) {
+    m_adminPublicKey = publicKey;
 }

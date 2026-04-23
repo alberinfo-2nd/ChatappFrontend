@@ -5,11 +5,17 @@
 #include <BackendClient.h>
 #include <json.hpp>
 #include <SessionManager.h>
+#include <QCoreApplication>
+#include <QSettings>
 
 // Constructor: most important added attribute is the pointer to the sessionManager
 // Initializes the client and sets up timers for automatic data polling
 BackendClient::BackendClient(QObject *parent, SessionManager *sessionManager)
-    : QObject(parent), m_client("10.0.0.104", 8080), m_activeUsersTimer(new QTimer(this)), m_messagesTimer(new QTimer(this)), m_sessionManager{sessionManager}
+    : QObject(parent)
+    , m_client(loadBackendHost().toStdString(), loadBackendPort())
+    , m_activeUsersTimer(new QTimer(this))
+    , m_messagesTimer(new QTimer(this))
+    , m_sessionManager{sessionManager}
 {
     // Connect timers to trigger background requests for users and messages
     connect(m_activeUsersTimer, &QTimer::timeout, this, &BackendClient::requestActiveUsers);
@@ -31,7 +37,7 @@ std::string BackendClient::sendLogin(std::string username, std::string public_ke
 
     if (!result)
     {
-        std::cerr << "HTTP request failed\n";
+        std::cerr << "Login: HTTP request failed\n";
         return "Request failed";
     }
 
@@ -48,10 +54,10 @@ std::string BackendClient::sendLogin(std::string username, std::string public_ke
 }
 
 // Notifies the server to terminate the current session
-void BackendClient::logout()
+void BackendClient::logout(const std::string &username, const std::string &authorizationToken)
 {
     nlohmann::json request_body = {
-        {"username", m_sessionManager->getUsername().toStdString()}};
+        {"username", username}};
 
     httplib::Request req;
     req.method = "POST";
@@ -59,19 +65,19 @@ void BackendClient::logout()
     req.body = request_body.dump();
     req.headers = {
         {"Content-Type", "application/json"},
-        {"authorizationToken", m_sessionManager->getAuthorizationToken().toStdString()}};
+        {"authorizationToken", authorizationToken}};
 
     auto result = m_client.send(req);
 
     if (!result)
     {
-        std::cerr << "HTTP request failed\n";
+        std::cerr << "Logout: HTTP request failed\n";
         return;
     }
 
     if (result->status != 200)
     {
-        std::cerr << "Request failed with status " << result->status << ": " << result->body << std::endl;
+        std::cerr << "Request logout failed with status " << result->status << ": " << result->body << std::endl;
         return;
     }
 
@@ -102,11 +108,12 @@ void BackendClient::requestActiveUsers()
 
     if (!result)
     {
-        std::cerr << "HTTP request failed\n";
+        std::cerr << "Request active users: HTTP request failed\n";
         return;
     }
 
     auto json_result = nlohmann::json::parse(result->body);
+
     if (result->status != 200)
     {
         std::cerr << "Request active users failed with status " << result->status << ": " << result->body << std::endl;
@@ -171,15 +178,19 @@ void BackendClient::sendMessage(const std::string &recipient, const std::string 
 
     auto result = m_client.send(req);
 
-    if (result)
+    if (!result)
     {
-        std::cerr << "Request sent. Status:" << result->status << std::endl;
-        std::cerr << "Response body:" << result->body << std::endl;
+        std::cerr << "Send Message: HTTP request failed\n";
+        return;
     }
-    else
+
+    if (result->status != 200)
     {
-        std::cerr << "Failed to send request" << result->status << std::endl;
+        std::cerr << "Send message request failed with status " << result->status << ": " << result->body << std::endl;
+        return;
     }
+
+    std::clog << "Server response body: " << result->body << std::endl;
 }
 
 // Sends a report request to the server for a specific user
@@ -187,9 +198,12 @@ void BackendClient::reportUser(const std::string &reportedUser)
 {
     if (m_sessionManager->getUsername().isEmpty())
         return;
+
     nlohmann::json request_body = {
         {"username", m_sessionManager->getUsername().toStdString()},
-        {"reportedUser", reportedUser}};
+        {"reportedUser", reportedUser}
+    };
+
     httplib::Request req;
     req.method = "POST";
     req.path = "/report";
@@ -197,30 +211,23 @@ void BackendClient::reportUser(const std::string &reportedUser)
     req.headers = {
         {"Content-Type", "application/json"},
         {"authorizationToken", m_sessionManager->getAuthorizationToken().toStdString()}};
+
     auto result = m_client.send(req);
 
-    std::clog << "Server response body: " << result->body << std::endl;
 
     if (!result)
     {
-        std::cerr << "Could not reach server" << std::endl;
+        std::cerr << "Report user: HTTP request failed" << std::endl;
         return;
     }
-    if (!result->body.empty())
+
+    if (result->status != 200)
     {
-        try
-        {
-            auto json_res = nlohmann::json::parse(result->body);
-        }
-        catch (const nlohmann::json::parse_error &e)
-        {
-            std::cerr << "JSON Parse Error: " << e.what() << std::endl;
-        }
+        std::cerr << "Report user request failed with status " << result->status << ": " << result->body << std::endl;
+        return;
     }
-    else
-    {
-        std::clog << "Server returned an empty body with status: " << result->status << std::endl;
-    }
+
+    std::clog << "Server response body: " << result->body << std::endl;
 }
 
 // Gets new messages from the server and parses them into Message objects for the UI
@@ -247,7 +254,7 @@ void BackendClient::requestMessages()
 
     if (!result)
     {
-        std::cerr << "request messages: HTTP request failed\n";
+        std::cerr << "Request messages: HTTP request failed\n";
         return;
     }
 
@@ -266,7 +273,7 @@ void BackendClient::requestMessages()
     }
     catch (const std::exception &e)
     {
-        std::cerr << "request messages: JSON parse failed: " << e.what() << '\n';
+        std::cerr << "Request messages: JSON parse failed: " << e.what() << '\n';
         return;
     }
 
@@ -278,10 +285,17 @@ void BackendClient::requestMessages()
     std::vector<Message> messages;
     for (const auto &jsonMessage : json_result["messages"])
     {
-        messages.emplace_back(
+        Message newMessage{
             QString::fromStdString(jsonMessage.value("timestamp", "")),
             QString::fromStdString(jsonMessage.value("sender", "")),
-            QString::fromStdString(jsonMessage.value("content", "")));
+            QString::fromStdString(jsonMessage.value("content", ""))
+        };
+
+        if (jsonMessage.contains("public_key")) {
+            newMessage.setAdminPublicKey(QString::fromStdString(jsonMessage.value("public_key", "")));
+        }
+
+        messages.push_back(newMessage);
     }
 
     if (!messages.empty())
@@ -309,7 +323,7 @@ std::string BackendClient::kick(std::string username)
 
     if (!result)
     {
-        std::cerr << "HTTP request failed\n";
+        std::cerr << "Kick: HTTP request failed\n";
         return "Request failed";
     }
 
@@ -323,6 +337,22 @@ std::string BackendClient::kick(std::string username)
     }
 
     return json_result["message"];
+}
+
+// reads from config.ini to get backend host, allows for user to change backend host without rebuilding (default is 127.0.0.1)
+QString BackendClient::loadBackendHost() {
+    QString configPath = QCoreApplication::applicationDirPath() + "/config.ini";
+    QSettings settings(configPath, QSettings::IniFormat);
+
+    return settings.value("backend/host", "127.0.0.1").toString();
+}
+
+// reads from config.ini to get backend port, allows for user to change backend port without rebuilding (default is 8080)
+int BackendClient::loadBackendPort() {
+    QString configPath = QCoreApplication::applicationDirPath() + "/config.ini";
+    QSettings settings(configPath, QSettings::IniFormat);
+
+    return settings.value("backend/port", 8080).toInt();
 }
 
 #endif
