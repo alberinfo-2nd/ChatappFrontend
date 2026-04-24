@@ -26,7 +26,7 @@ Project for COP3003 Spring2026
 
 ### Running pre-built executable
 
-Download latest executable from Releases, extract from zip, run start_chatApp.bat file. The default host and port is set to 127.0.0.1, 8080. After running the .bat file the frontend and backend executables will launch.
+Download the latest release package from Releases. Upon launch, the client will connect to the backend host at 127.0.0.1 on port 8080.
 
 ### Building from source
 
@@ -36,7 +36,7 @@ Download latest executable from Releases, extract from zip, run start_chatApp.ba
 - CMake 3.16 or newer
 - c++ compiler
 
-####
+#### Steps
 
 1. Clone Repository:
    `git clone https://github.com/alberinfo-2nd/ChatappFrontend.git`
