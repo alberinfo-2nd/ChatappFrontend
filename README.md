@@ -22,10 +22,24 @@ Project for COP3003 Spring2026
 
 ---
 
-## Steps
+## How to run
+
+### Running pre-built executable
+
+Download latest executable from Releases, extract from zip, run start_chatApp.bat file. The default host and port is set to 127.0.0.1, 8080. After running the .bat file the frontend and backend executables will launch.
+
+### Building from source
+
+#### Requirments
+
+- Qt 6.11 or newer
+- CMake 3.16 or newer
+- c++ compiler
+
+####
 
 1. Clone Repository:
-   git clone https://github.com/alberinfo-2nd/ChatappFrontend.git
+   `git clone https://github.com/alberinfo-2nd/ChatappFrontend.git`
 2. Open the project in your IDE
 3. Build Project
 4. Run the application
@@ -49,6 +63,10 @@ Project for COP3003 Spring2026
 - BackendClient: Handles all network communication and API calls to the server.
 - ActiveUsersManager: Tracks and updates the list of currently online users.
 
+### UML
+
+- ![UML Diagram](UML.jpg)
+
 ---
 
 ## OPP Used
@@ -70,6 +88,24 @@ Project for COP3003 Spring2026
 
 ---
 
+## Team Contributions for Chatapp Frontend
+
+### Member 1: [KlopezS25]
+
+- UI navigation logic
+- UI design/layout
+- User session management
+
+### Member 2: [jkgoar]
+
+- Handled backend connection logic
+- UI design/layout
+- User session management
+
+### Member 3: [mills0911]
+
+- Encryption/Decryption
+
 ## AI Tools
 
 - Gemini: Used for debugging and troubleshooting UI implementation to help resolve layout issues within the Qt framework.
@@ -80,6 +116,17 @@ Project for COP3003 Spring2026
 ## External Resources
 
 - YouTube tutorial on basic Qt GUI setup: https://www.youtube.com/playlist?list=PLS1QulWo1RIZiBcTr5urECberTITj7gjA
+- Qt official documentation: https://doc.qt.io/
+
+---
+
+## Acknowledgments
+
+- **[cpp-httplib](https://github.com/yhirose/cpp-httplib)** - Provides core HTTPS functionality
+
+- **[json](https://github.com/nlohmann/json)** - Provides core json functionality
+
+- **[libsodiun](https://github.com/jedisct1/libsodium)** - Provides core encryption/decryption using public/private key pairs
 
 ---
 
